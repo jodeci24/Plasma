@@ -44,6 +44,10 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "HeadSpin.h"
 
+/**
+ * Define hsMilliseconds as an unsigned integer.
+ * @remark Should this be uint64_t?
+ */
 typedef uint32_t hsMilliseconds;
 
 
@@ -59,48 +63,175 @@ typedef uint32_t hsMilliseconds;
 //  #define PSEUDO_EVENT
 #endif
 
-class hsThread 
+/**
+ * A base class for threaded execution.
+ *
+ * This class is implemented as a wrapper over the threading functionality of
+ * the native operating system. On Windows, this uses Win32 threads; on *nix
+ * it uses POSIX threads (pthreads).
+ *
+ * To run a thread, you should derive your own class, overriding the Run
+ * method to do your work. You can start the thread by calling the Start
+ * method, and stop the thread's execution with the Stop method.
+ */
+class hsThread
 {
 public:
 #if HS_BUILD_FOR_WIN32
+    /** ThreadId is a DWORD value in Win32. */
     typedef DWORD ThreadId;
 #elif HS_BUILD_FOR_UNIX
+    /** ThreadID is a pthread_t type in *nix. */
     typedef pthread_t ThreadId;
 #endif
+
 private:
+    /** Boolean indicating if the thread is quitting. */
     bool        fQuit;
+
+    /** The thread stack size, used only in Win32 threads. */
     uint32_t    fStackSize;
+
 #if HS_BUILD_FOR_WIN32
+    /** The Win32 thread ID. */
     ThreadId    fThreadId;
+
+    /** The Win32 HANDLE to the thread. */
     HANDLE      fThreadH;
+
+    /** The Win32 HANDLE to the quit semaphore. */
     HANDLE      fQuitSemaH;
 #elif HS_BUILD_FOR_UNIX
+    /** The pthread thread ID. */
     ThreadId    fPThread;
+
+    /** Boolean indicating if the thread is valid. */
     bool        fIsValid;
+
+    /** A pthread mutex used during initialization. */
     pthread_mutex_t fMutex;
 #endif
+
 protected:
-    bool        GetQuit() const { return fQuit; }
-    void        SetQuit(bool value) { fQuit = value; }
+    /**
+     * Returns whether the thread is quitting.
+     *
+     * @return True if the thread is quitting, false otherwise.
+     */
+    bool GetQuit() const { return fQuit; }
+
+    /**
+     * Sets whether the thread is quitting.
+     * Setting this with a value of true will result in the thread terminating.
+     *
+     * @param value Boolean whether to quit the thread.
+     */
+    void SetQuit(bool value) { fQuit = value; }
+
 public:
+    /**
+     * Creates a new thread instance with an optional stack size.
+     *
+     * @param stackSize The stack size for the thread. This is unused and
+     *                  ignored in *nix.
+     */
     hsThread(uint32_t stackSize = 0);
-    virtual     ~hsThread();    // calls Stop()
+
+    /**
+     * Stops, destroys, and cleans up a thread instance.
+     *
+     * This will call the Stop method to terminate the thread if it is running.
+     */
+    virtual     ~hsThread();
+
 #if HS_BUILD_FOR_WIN32
+    /**
+     * Gets the OS-specific ID for the thread instance.
+     *
+     * @return The thread ID.
+     */
     ThreadId        GetThreadId() { return fThreadId; }
+
+    /**
+     * Gets the OS-specific ID for the currently executing thread.
+     *
+     * @return The ID of the current thread.
+     */
     static ThreadId GetMyThreadId() { return GetCurrentThreadId(); }
 #elif HS_BUILD_FOR_UNIX
+    /**
+     * Gets the OS-specific ID for the thread instance.
+     *
+     * @return The thread ID.
+     */
     ThreadId            GetThreadId() { return fPThread; }
+
+    /**
+     * Gets the OS-specific ID for the currently executing thread.
+     *
+     * @return The ID of the current thread.
+     */
     static ThreadId     GetMyThreadId() { return pthread_self(); }
+
+    /**
+     * Gets the mutex used during thread startup.
+     *
+     * @return The startup mutex.
+     */
     pthread_mutex_t* GetStartupMutex() { return &fMutex;  }
 #endif
-                
-    virtual hsError Run() = 0;      // override this to do your work
-    virtual void    Start();        // initializes stuff and calls your Run() method
-    virtual void    Stop();     // sets fQuit = true and the waits for the thread to stop
-                
+
+    /**
+     * Run the thread.
+     *
+     * This is a pure virtual method, which must be overridden in a derived
+     * class to perform the threaded work.
+     *
+     * @return An hsError code: 0 for success.
+     */
+    virtual hsError Run() = 0;
+
+    /**
+     * Initializes and starts the thread.
+     *
+     * This sets up the thread for execution, and calls the Run method.
+     */
+    virtual void Start();
+
+    /**
+     * Signals the thread to stop execution.
+     *
+     * This sets the quitting value to true, and waits for the thread to
+     * terminate.
+     */
+    virtual void Stop();
+
     //  Static functions
-    static void*    Alloc(size_t size); // does not call operator::new(), may return nil
-    static void Free(void* p);      // does not call operator::delete()
+
+    /**
+     * Allocates memory from the context of the current thread.
+     * This does not call the new operator.
+     *
+     * @deprecated Do not use this method.
+     * @param size The amount of memory to be allocated in bytes.
+     * @return A pointer to the newly allocated memory, or NULL.
+     */
+    static void* Alloc(size_t size);
+
+    /**
+     * Frees memory from the context of the current thread.
+     * This does not call the delete operator.
+     *
+     * @deprecated Do not use this method.
+     * @param p The pointer to the memory to be freed.
+     */
+    static void Free(void* p);
+
+    /**
+     * Yield the current thread. UNIMPLEMENTED.
+     *
+     * @deprecated Do not use this method.
+     */
     static void ThreadYield();
 };
 
