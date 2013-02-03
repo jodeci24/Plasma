@@ -96,6 +96,7 @@ set(CoreLib_HEADERS
     plString.h
     plTweak.h
     plViewTransform.h
+    qtPlasma.h
 )
 
 add_library(CoreLib STATIC ${CoreLib_SOURCES} ${CoreLib_HEADERS})

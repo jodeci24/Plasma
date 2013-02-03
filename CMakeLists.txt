@@ -106,6 +106,11 @@ if(USE_VLD)
     include_directories(${VLD_INCLUDE_DIR})
 endif(USE_VLD)
 
+option(BUILD_QT_TOOLS "Build tools (Requires Qt)" OFF)
+if(BUILD_QT_TOOLS)
+    add_definitions(-DBUILD_QT_TOOLS)
+endif()
+
 include(TestBigEndian)
 test_big_endian(BIG_ENDIAN)
 if(BIG_ENDIAN)
