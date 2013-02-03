@@ -1,0 +1,10 @@
+# if defined(UNDER_CE)
+#  include <winbase.h>
+# else
+#  include <winver.h>
+# endif
+
+/* Icons */
+MAINICON         ICON    DISCARDABLE     "icons\qtResBrowser.ico"
+/* End of Icons */
+

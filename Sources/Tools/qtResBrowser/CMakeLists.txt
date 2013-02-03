@@ -20,10 +20,20 @@ set(qtResBrowser_Sources
     qtTreeItem.cpp
 )
 
+if(WIN32)
+    set(qtResBrowser_Sources ${qtResBrowser_Sources} qtResBrowser.rc)
+endif()
+
 # generate rules for building source files from the resources
 qt4_add_resources(qtResBrowser_RCC images.qrc)
 # generate rules for building source files that moc generates
 qt4_wrap_cpp(qtResBrowser_MOC ${qtResBrowser_MOC_Headers})
+
+if(APPLE)
+    set(MACOSX_BUNDLE true)
+    set(MACOSX_BUNDLE_NAME "qtResBrowser")
+    set(MACOSX_BUNDLE_ICON_FILE "icons/qtResBrowser.icns")
+endif()
 
 add_executable(qtResBrowser WIN32 MACOSX_BUNDLE ${qtResBrowser_Sources} ${qtResBrowser_MOC} ${qtResBrowser_RCC})
 

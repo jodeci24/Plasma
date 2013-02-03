@@ -90,9 +90,9 @@ qtResBrowser::qtResBrowser() {
     setDockOptions(QMainWindow::AnimatedDocks);
 
     // Set up actions
-    fActions[kFileNewPage] = new QAction(QIcon(":/icons/document-new.png"), tr("New &Page"), this);
-    fActions[kFileOpen] = new QAction(QIcon(":/icons/document-open.png"), tr("&Open..."), this);
-    fActions[kFileSave] = new QAction(QIcon(":/icons/document-save.png"), tr("&Save"), this);
+    fActions[kFileNewPage] = new QAction(QIcon::fromTheme("document-new"), tr("New &Page"), this);
+    fActions[kFileOpen] = new QAction(QIcon::fromTheme("document-open"), tr("&Open..."), this);
+    fActions[kFileSave] = new QAction(QIcon::fromTheme("document-save"), tr("&Save"), this);
     fActions[kFileSaveAs] = new QAction(tr("Sa&ve As..."), this);
     fActions[kFileExit] = new QAction(tr("E&xit"), this);
     fActions[kToolsProperties] = new QAction(tr("Show &Properties Pane"), this);
