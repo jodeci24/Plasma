@@ -57,7 +57,7 @@ private:
     plKey               fKey;
     plRegistryPageNode* fPage;
     QString             fAge;
-    QString             fFilename;
+    plFileName          fFilename;
 
 public:
     enum ItemType {
@@ -97,8 +97,8 @@ public:
         return (type() == kTypePage) ? fPage : nullptr;
     }
 
-    QString filename() const { return fFilename; }
-    void setFilename(const QString& filename) { fFilename = filename; }
+    plFileName filename() const { return fFilename; }
+    void setFilename(const plFileName& filename) { fFilename = filename; }
 };
 
 #endif // _qtTreeItem_inc_

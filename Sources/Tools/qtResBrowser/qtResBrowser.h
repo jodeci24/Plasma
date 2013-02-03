@@ -56,6 +56,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include <QAction>
 
 #include "qtTreeItem.h"
+#include "qtTreeIterator.h"
 #include "plResMgr/plResManager.h"
 #include "pnKeyedObject/plUoid.h"
 
@@ -117,7 +118,7 @@ private:
     QAction* fActions[kNumActions];
 
     // Plasma stuff
-    QHash<plLocation, qtTreeItem*> fLoadedLocations;
+    qtTreeIterator* fTreeIter;
 
     // Magic for Creatable loading
     static qtResBrowser* sInstance;
@@ -136,7 +137,6 @@ protected:
     virtual void closeEvent(QCloseEvent* evt);
     virtual void dragEnterEvent(QDragEnterEvent* evt);
     virtual void dropEvent(QDropEvent* evt);
-    qtTreeItem* loadPage(plRegistryPageNode*, QString filename);
 //    QPlasmaTreeItem* findCurrentPageItem(bool isSave = false);
 //    QPlasmaTreeItem* ensurePath(const plLocation& loc, short objType);
 
@@ -147,7 +147,7 @@ public slots:
 //    void performSaveAs();
     void treeItemChanged(QTreeWidgetItem* current, QTreeWidgetItem* previous);
 //    void treeItemActivated(QTreeWidgetItem* item, int column);
-//    void treeContextMenu(const QPoint& pos);
+    void treeContextMenu(const QPoint& pos);
 //    void createNewObject();
 //    void showTypeIDs(bool show);
 //
@@ -157,7 +157,7 @@ public slots:
 //    void treePreview();
 //    void treeDelete();
 //    void treeImport();
-//    void treeExport();
+    void treeExport();
 };
 
 #endif //_qtResBrowser_inc_

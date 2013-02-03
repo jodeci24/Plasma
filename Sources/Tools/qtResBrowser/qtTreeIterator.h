@@ -55,14 +55,50 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "pnKeyedObject/plKeyImp.h"
 #include "pnFactory/plFactory.h"
 
-class qtTreeIterator : public plRegistryKeyIterator
+class qtTreeIterator : public plRegistryPageIterator, public plRegistryKeyIterator
 {
 private:
-    QHash<uint16_t, qtTreeItem*> fFolders;
+    QHash<uint32_t, qtTreeItem*> fFolders;
+    QTreeWidget* fWidget;
     qtTreeItem* fRoot;
 
 public:
-    qtTreeIterator(qtTreeItem* root) : fRoot(root) { }
+    qtTreeIterator(QTreeWidget* widget) : fWidget(widget), fRoot(nullptr) { }
+    qtTreeIterator(qtTreeItem* root) : fWidget(nullptr), fRoot(root) { }
+
+    virtual bool EatPage(plRegistryPageNode* page)
+    {
+        // See if the page is already loaded -- return that if so
+        qtTreeItem* parent = nullptr;
+        qtTreeItem* item = fFolders.value(page->GetPageInfo().GetLocation().GetSequenceNumber(), nullptr);
+        if (item != nullptr) {
+            item->setFilename(page->GetPagePath());
+            return true;
+        }
+
+        // Find or create the Age folder
+        QString ageName = ~page->GetPageInfo().GetAge();
+        for (int i = 0; i < fWidget->topLevelItemCount(); i++) {
+            if (fWidget->topLevelItem(i)->text(0) == ageName) {
+                parent = static_cast<qtTreeItem*>(fWidget->topLevelItem(i));
+                break;
+            }
+        }
+        if (parent == NULL)
+            parent = new qtTreeItem(fWidget, ageName);
+
+        // And now the Page entry
+        item = new qtTreeItem(parent, page);
+
+        qtTreeIterator iter(item);
+        page->LoadKeys();
+        page->IterateKeys(&iter);
+
+        item->setFilename(page->GetPagePath());
+
+        fFolders[page->GetPageInfo().GetLocation().GetSequenceNumber()] = item;
+        return true;
+    }
 
     virtual bool EatKey(const plKey& key)
     {

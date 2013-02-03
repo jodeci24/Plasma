@@ -70,9 +70,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plMessage/plResMgrHelperMsg.h"
 REGISTER_CREATABLE(plResMgrHelperMsg);
 
-// qHash functions for QHashMaps
-inline unsigned int qHash(const plLocation& loc) { return loc.GetSequenceNumber(); }
-
 
 qtResBrowser* qtResBrowser::sInstance = nullptr;
 qtResBrowser* qtResBrowser::Instance() { return sInstance; }
@@ -181,6 +178,8 @@ qtResBrowser::qtResBrowser() {
     fBrowserTree->setContextMenuPolicy(Qt::CustomContextMenu);
     addDockWidget(Qt::LeftDockWidgetArea, fBrowserDock);
 
+    fTreeIter = new qtTreeIterator(fBrowserTree);
+
     // Property Pane
     fPropertyDock = new QDockWidget(tr("Properties"), this);
     fPropertyDock->setObjectName("PropertyDock");
@@ -228,14 +227,14 @@ qtResBrowser::qtResBrowser() {
     //connect(fActions[kTreePreview], SIGNAL(triggered()), this, SLOT(treePreview()));
     //connect(fActions[kTreeDelete], SIGNAL(triggered()), this, SLOT(treeDelete()));
     //connect(fActions[kTreeImport], SIGNAL(triggered()), this, SLOT(treeImport()));
-    //connect(fActions[kTreeExport], SIGNAL(triggered()), this, SLOT(treeExport()));
+    connect(fActions[kTreeExport], SIGNAL(triggered()), this, SLOT(treeExport()));
 
     connect(fBrowserTree, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
             this, SLOT(treeItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)));
     //connect(fBrowserTree, SIGNAL(itemActivated(QTreeWidgetItem*, int)),
     //        this, SLOT(treeItemActivated(QTreeWidgetItem*, int)));
-    //connect(fBrowserTree, SIGNAL(customContextMenuRequested(const QPoint&)),
-    //        this, SLOT(treeContextMenu(const QPoint&)));
+    connect(fBrowserTree, SIGNAL(customContextMenuRequested(const QPoint&)),
+            this, SLOT(treeContextMenu(const QPoint&)));
 
     // TODO: Load UI Settings
 }
@@ -328,7 +327,7 @@ void qtResBrowser::setPropertyPage(PropWhich which)
             layout->addWidget(fAgeName, 0, 1);
             layout->addWidget(new QLabel(tr("Page:"), group), 1, 0);
             layout->addWidget(fPageName, 1, 1);
-            layout->addWidget(new QLabel(tr("Release Version:"), group), 2, 0);
+            layout->addWidget(new QLabel(tr("Data Version:"), group), 2, 0);
             layout->addWidget(fReleaseVersion, 2, 1);
             layout->addWidget(locationGrp, 3, 0, 1, 2);
         }
@@ -434,6 +433,87 @@ void qtResBrowser::treeItemChanged(QTreeWidgetItem* current, QTreeWidgetItem* pr
     }
 }
 
+void qtResBrowser::treeContextMenu(const QPoint& pos)
+{
+    fBrowserTree->setCurrentItem(fBrowserTree->itemAt(pos));
+    qtTreeItem* item = static_cast<qtTreeItem*>(fBrowserTree->currentItem());
+    if (item == nullptr)
+        return;
+
+    QMenu menu(this);
+    if (item->type() == qtTreeItem::kTypeAge)
+    {
+        //menu.addAction(fActions[kTreeClose]);
+    }
+    else if (item->type() == qtTreeItem::kTypePage)
+    {
+        //menu.addAction(fActions[kTreeClose]);
+        //menu.addAction(fActions[kTreeImport]);
+    }
+    else if (item->type() == qtTreeItem::kTypeKO)
+    {
+        //menu.addAction(fActions[kTreeEdit]);
+        //menu.addAction(fActions[kTreeEditPRC]);
+        //menu.addAction(fActions[kTreePreview]);
+        //menu.addSeparator();
+        //menu.addAction(fActions[kTreeDelete]);
+        //menu.addAction(fActions[kTreeImport]);
+        menu.addAction(fActions[kTreeExport]);
+        //menu.setDefaultAction(fActions[kTreeEdit]);
+        //fActions[kTreePreview]->setEnabled(pqCanPreviewType(item->obj()->ClassIndex()));
+    }
+    else
+    {
+        //menu.addAction(fActions[kTreeImport]);
+    }
+    menu.exec(fBrowserTree->viewport()->mapToGlobal(pos));
+}
+
+void qtResBrowser::treeExport()
+{
+    qtTreeItem* item = static_cast<qtTreeItem*>(fBrowserTree->currentItem());
+    if (item == nullptr || item->key() == nullptr)
+        return;
+
+    plKeyImp* keyImp = static_cast<plKeyImp*>(item->key());
+
+    if (keyImp->GetDataLen() <= 0)
+        return;
+
+    QString fnfix = (~keyImp->GetName()).replace(QRegExp("[?:/\\*\"<>|]"), "_");
+    QString genPath = tr("%1/[%2]%3.po").arg(fDialogDir)
+                                        .arg(plFactory::GetNameOfClass(keyImp->GetUoid().GetClassType()))
+                                        .arg(fnfix);
+    QString filename = QFileDialog::getSaveFileName(this,
+                            tr("Export Raw Object"), genPath,
+                            "Plasma Objects (*.po *.mof *.uof)");
+
+    if (!filename.isEmpty()) {
+        plResManager* resMgr = static_cast<plResManager*>(hsgResMgr::ResMgr());
+        plRegistryPageNode* page = resMgr->FindPage(keyImp->GetUoid().GetLocation());
+
+        hsStream* dataStream = page->OpenStream();
+        uint8_t* buffer = new uint8_t[keyImp->GetDataLen()];
+
+        if (buffer) {
+            dataStream->SetPosition(keyImp->GetStartPos());
+            dataStream->Read(keyImp->GetDataLen(), buffer);
+        }
+
+        page->CloseStream();
+
+        if (buffer == nullptr)
+            return;
+
+        hsUNIXStream outStream;
+        outStream.Open((~filename).c_str(), "wb");
+        outStream.Write(keyImp->GetDataLen(), buffer);
+        outStream.Close();
+
+        delete[] buffer;
+    }
+}
+
 
 void qtResBrowser::openFiles()
 {
@@ -465,7 +545,7 @@ void qtResBrowser::loadFile(QString filename)
         mgr->AddSinglePage(~filename);
 
         plRegistryPageNode* page = mgr->FindSinglePage(~filename);
-        this->loadPage(page, filename);
+        fTreeIter->EatPage(page);
     }
     else
     {
@@ -476,40 +556,6 @@ void qtResBrowser::loadFile(QString filename)
     }
 
     fBrowserTree->sortItems(0, Qt::AscendingOrder);
-}
-
-qtTreeItem* qtResBrowser::loadPage(plRegistryPageNode* page, QString filename)
-{
-    // See if the page is already loaded -- return that if so
-    qtTreeItem* parent = NULL;
-    qtTreeItem* item = fLoadedLocations.value(page->GetPageInfo().GetLocation(), NULL);
-    if (item != NULL) {
-        item->setFilename(filename);
-        return item;
-    }
-
-    // Find or create the Age folder
-    QString ageName = ~page->GetPageInfo().GetAge();
-    for (int i = 0; i < fBrowserTree->topLevelItemCount(); i++) {
-        if (fBrowserTree->topLevelItem(i)->text(0) == ageName) {
-            parent = (qtTreeItem*)fBrowserTree->topLevelItem(i);
-            break;
-        }
-    }
-    if (parent == NULL)
-        parent = new qtTreeItem(fBrowserTree, ageName);
-
-    // And now the Page entry
-    item = new qtTreeItem(parent, page);
-
-    qtTreeIterator iter(item);
-
-    page->LoadKeys();
-    page->IterateKeys(&iter);
-
-    item->setFilename(filename);
-    fLoadedLocations[page->GetPageInfo().GetLocation()] = item;
-    return item;
 }
 
 
