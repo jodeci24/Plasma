@@ -1,0 +1,17 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+    <!-- App Images -->
+    <file>icons/qtResBrowser.svg</file>
+
+    <!-- Toolbar Icons -->
+    <file>icons/document-new.png</file>
+    <file>icons/document-open.png</file>
+    <file>icons/document-save.png</file>
+
+    <!-- Images for the Object Tree -->
+    <file>icons/folder.png</file>
+    <file>icons/age.png</file>
+    <file>icons/page.png</file>
+    <file>icons/object.png</file>
+</qresource>
+</RCC>

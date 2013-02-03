@@ -1,6 +1,10 @@
 add_subdirectory(plLocalizationEditor)
 add_subdirectory(plResBrowser)
 
+if(BUILD_QT_TOOLS)
+    add_subdirectory(qtResBrowser)
+endif()
+
 if(FREETYPE_FOUND)
     add_subdirectory(plFontConverter)
 endif()
