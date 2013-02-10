@@ -106,8 +106,8 @@ private:
     enum {
         // Main Menu
         kFileNewPage, kFileOpen, kFileSave, kFileSaveAs, kFileExit,
-        kToolsProperties, kToolsShowTypeIDs, kToolsNewObject, kWindowPrev,
-        kWindowNext, kWindowTile, kWindowCascade, kWindowClose, kWindowCloseAll,
+        kToolsProperties, kToolsNewObject, kWindowPrev, kWindowNext,
+        kWindowTile, kWindowCascade, kWindowClose, kWindowCloseAll,
 
         // Tree Context Menu
         kTreeClose, kTreeEdit, kTreeEditPRC, kTreePreview, kTreeDelete,
@@ -149,8 +149,7 @@ public slots:
 //    void treeItemActivated(QTreeWidgetItem* item, int column);
     void treeContextMenu(const QPoint& pos);
 //    void createNewObject();
-//    void showTypeIDs(bool show);
-//
+
 //    void treeClose();
 //    void treeEdit();
 //    void treeEditPRC();

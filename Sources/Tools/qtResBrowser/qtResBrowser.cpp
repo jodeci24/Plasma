@@ -96,7 +96,6 @@ qtResBrowser::qtResBrowser() {
     fActions[kFileSaveAs] = new QAction(tr("Sa&ve As..."), this);
     fActions[kFileExit] = new QAction(tr("E&xit"), this);
     fActions[kToolsProperties] = new QAction(tr("Show &Properties Pane"), this);
-    fActions[kToolsShowTypeIDs] = new QAction(tr("Show Type &IDs"), this);
     fActions[kToolsNewObject] = new QAction(tr("&New Object..."), this);
     fActions[kWindowPrev] = new QAction(tr("&Previous"), this);
     fActions[kWindowNext] = new QAction(tr("&Next"), this);
@@ -119,8 +118,6 @@ qtResBrowser::qtResBrowser() {
     fActions[kWindowClose]->setShortcut(Qt::CTRL + Qt::Key_W);
     fActions[kToolsProperties]->setCheckable(true);
     fActions[kToolsProperties]->setChecked(true);
-    fActions[kToolsShowTypeIDs]->setCheckable(true);
-    fActions[kToolsShowTypeIDs]->setChecked(false);
 
     // TODO: Main Menus
     QMenu* fileMenu = menuBar()->addMenu(tr("&File"));
@@ -134,7 +131,6 @@ qtResBrowser::qtResBrowser() {
 
     QMenu* viewMenu = menuBar()->addMenu(tr("&Tools"));
     viewMenu->addAction(fActions[kToolsProperties]);
-    //viewMenu->addAction(fActions[kToolsShowTypeIDs]);
     //viewMenu->addSeparator();
     //viewMenu->addAction(fActions[kToolsNewObject]);
 
@@ -154,6 +150,7 @@ qtResBrowser::qtResBrowser() {
     //fileTbar->addAction(fActions[kFileNewPage]);
     fileTbar->addAction(fActions[kFileOpen]);
     //fileTbar->addAction(fActions[kFileSave]);
+    fileTbar->setMovable(false);
 
     // MDI Area for child editors
     fMdiArea = new QMdiArea(this);
@@ -178,6 +175,7 @@ qtResBrowser::qtResBrowser() {
     fBrowserTree->setContextMenuPolicy(Qt::CustomContextMenu);
     addDockWidget(Qt::LeftDockWidgetArea, fBrowserDock);
 
+    // Registry Iterator
     fTreeIter = new qtTreeIterator(fBrowserTree);
 
     // Property Pane
@@ -203,8 +201,6 @@ qtResBrowser::qtResBrowser() {
             fPropertyDock, SLOT(setVisible(bool)));
     connect(fPropertyDock, SIGNAL(visibilityChanged(bool)),
             fActions[kToolsProperties], SLOT(setChecked(bool)));
-    //connect(fActions[kToolsShowTypeIDs], SIGNAL(toggled(bool)),
-    //        this, SLOT(showTypeIDs(bool)));
     //connect(fActions[kToolsNewObject], SIGNAL(triggered()),
     //        this, SLOT(createNewObject()));
 
