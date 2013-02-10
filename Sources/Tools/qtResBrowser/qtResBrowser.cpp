@@ -195,7 +195,7 @@ qtResBrowser::qtResBrowser() {
     connect(fActions[kFileExit], SIGNAL(triggered()), this, SLOT(close()));
     connect(fActions[kFileOpen], SIGNAL(triggered()), this, SLOT(openFiles()));
     //connect(fActions[kFileSave], SIGNAL(triggered()), this, SLOT(performSave()));
-    //connect(fActions[kFileSaveAs], SIGNAL(triggered()), this, SLOT(performSaveAs()));
+    connect(fActions[kFileSaveAs], SIGNAL(triggered()), this, SLOT(performSaveAs()));
 
     connect(fActions[kToolsProperties], SIGNAL(toggled(bool)),
             fPropertyDock, SLOT(setVisible(bool)));
@@ -268,11 +268,44 @@ void qtResBrowser::dropEvent(QDropEvent* evt)
 }
 
 
+qtTreeItem* qtResBrowser::findCurrentPageItem(bool isSave)
+{
+    qtTreeItem* item = static_cast<qtTreeItem*>(fBrowserTree->currentItem());
+    if (item == nullptr)
+        return nullptr;
+
+    if (item->type() == qtTreeItem::kTypeAge)
+    {
+        if (isSave) {
+            // TODO: Save all pages
+        }
+
+        return nullptr;
+    }
+    else if (item->type() == qtTreeItem::kTypePage)
+    {
+        return item;
+    }
+    else if (item->type() == qtTreeItem::kTypeKO)
+    {
+        return fTreeIter->GetPageItem(item->key()->GetUoid().GetLocation());
+    }
+    else
+    {
+        // Type folder
+        qtTreeItem* pageItem = static_cast<qtTreeItem*>(item->parent());
+        hsAssert(pageItem->type() == qtTreeItem::kTypePage, "Got non-page parent");
+
+        return pageItem;
+    }
+}
+
+
 void qtResBrowser::setPropertyPage(PropWhich which)
 {
-    QWidget* group = NULL;
+    QWidget* group = nullptr;
     QLayoutItem* item = fPropertyContainer->layout()->itemAt(0);
-    if (item != NULL) {
+    if (item != nullptr) {
         // Clear the old property page
         fPropertyContainer->layout()->removeItem(item);
         delete item->widget();
@@ -507,6 +540,10 @@ void qtResBrowser::treeExport()
         outStream.Close();
 
         delete[] buffer;
+
+        QDir dir = QDir(filename);
+        dir.cdUp();
+        fDialogDir = dir.absolutePath();
     }
 }
 
@@ -552,6 +589,43 @@ void qtResBrowser::loadFile(QString filename)
     }
 
     fBrowserTree->sortItems(0, Qt::AscendingOrder);
+}
+
+
+void qtResBrowser::performSaveAs()
+{
+    qtTreeItem* pageItem = this->findCurrentPageItem(false);
+    if (pageItem == nullptr)
+        return;
+
+    QString saveDir = !pageItem->filename().IsValid()
+                    ? fDialogDir
+                    : ~pageItem->filename().AsString();
+
+    QString filename = QFileDialog::getSaveFileName(this,
+                            tr("Save PRP"), saveDir,
+                            "Page file (*.prp)");
+
+    if (!filename.isEmpty()) {
+        this->saveFile(pageItem->page(), filename);
+        QDir dir = QDir(filename);
+        dir.cdUp();
+        fDialogDir = dir.absolutePath();
+    }
+}
+
+void qtResBrowser::saveFile(plRegistryPageNode* page, QString filename)
+{
+    hsUNIXStream outStream;
+    outStream.Open((~filename).c_str(), "wb");
+
+    // NOTE: This causes the page to recalculate things internally, which means
+    // loading and immediately saving a page might result in different object
+    // ordering or stuff.
+    // TODO: Find out why this doesn't seem to write any objects :(
+    page->Write(&outStream);
+
+    outStream.Close();
 }
 
 

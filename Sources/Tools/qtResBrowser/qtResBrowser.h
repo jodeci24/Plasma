@@ -129,7 +129,7 @@ public:
     qtResBrowser();
     void setPropertyPage(PropWhich which);
     void loadFile(QString filename);
-//    void saveFile(plPageInfo* page, QString filename);
+    void saveFile(plRegistryPageNode* page, QString filename);
 //    void saveProps(QPlasmaTreeItem* item);
 //    void editCreatable(plCreatable* pCre, short forceType = -1);
 
@@ -137,14 +137,14 @@ protected:
     virtual void closeEvent(QCloseEvent* evt);
     virtual void dragEnterEvent(QDragEnterEvent* evt);
     virtual void dropEvent(QDropEvent* evt);
-//    QPlasmaTreeItem* findCurrentPageItem(bool isSave = false);
+    qtTreeItem* findCurrentPageItem(bool isSave = false);
 //    QPlasmaTreeItem* ensurePath(const plLocation& loc, short objType);
 
 public slots:
 //    void newPage();
     void openFiles();
 //    void performSave();
-//    void performSaveAs();
+    void performSaveAs();
     void treeItemChanged(QTreeWidgetItem* current, QTreeWidgetItem* previous);
 //    void treeItemActivated(QTreeWidgetItem* item, int column);
     void treeContextMenu(const QPoint& pos);

@@ -66,6 +66,11 @@ public:
     qtTreeIterator(QTreeWidget* widget) : fWidget(widget), fRoot(nullptr) { }
     qtTreeIterator(qtTreeItem* root) : fWidget(nullptr), fRoot(root) { }
 
+    qtTreeItem* GetPageItem(const plLocation& loc)
+    {
+        return fFolders.value(loc.GetSequenceNumber(), nullptr);
+    }
+
     virtual bool EatPage(plRegistryPageNode* page)
     {
         // See if the page is already loaded -- return that if so
