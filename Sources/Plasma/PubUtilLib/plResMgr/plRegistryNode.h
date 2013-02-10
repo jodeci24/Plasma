@@ -141,6 +141,7 @@ public:
 
     // Takes care of everything involved in writing this page to disk
     void Write();
+    void Write(hsStream* S);
     void DeleteSource();
 
     const plFileName& GetPagePath() const { return fPath; }

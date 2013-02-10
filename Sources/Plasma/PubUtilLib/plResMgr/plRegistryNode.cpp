@@ -222,6 +222,13 @@ void plRegistryPageNode::Write()
         return;
     }
 
+    this->Write(&fStream);
+
+    fStream.Close();
+}
+
+void plRegistryPageNode::Write(hsStream* S)
+{
     // Some prep stuff.  Assign object IDs for every key in this page, and put the
     // versions of all our creatable types in the pageinfo.
     fPageInfo.ClearClassVersions();
@@ -235,31 +242,29 @@ void plRegistryPageNode::Write()
     }
 
     // First thing we write is the pageinfo.  Later we'll rewind and overwrite this with the final values
-    fPageInfo.Write(&fStream);
+    fPageInfo.Write(S);
 
-    fPageInfo.SetDataStart(fStream.GetPosition());
+    fPageInfo.SetDataStart(S->GetPosition());
 
     // Write all our objects
-    plWriteIterator writer(&fStream);
+    plWriteIterator writer(S);
     IterateKeys(&writer);
 
-    fPageInfo.SetIndexStart(fStream.GetPosition());
+    fPageInfo.SetIndexStart(S->GetPosition());
 
     // Write our keys
-    fStream.WriteLE32(fKeyLists.size());
+    S->WriteLE32(fKeyLists.size());
     for (it = fKeyLists.begin(); it != fKeyLists.end(); it++)
     {
         plRegistryKeyList* keyList = it->second;
-        fStream.WriteLE16(keyList->GetClassType());
-        keyList->Write(&fStream);
+        S->WriteLE16(keyList->GetClassType());
+        keyList->Write(S);
     }
 
     // Rewind and write the pageinfo with the correct data and index offsets
-    fStream.Rewind();
-    fPageInfo.SetChecksum(fStream.GetEOF() - fPageInfo.GetDataStart());
-    fPageInfo.Write(&fStream);
-
-    fStream.Close();
+    S->Rewind();
+    fPageInfo.SetChecksum(S->GetEOF() - fPageInfo.GetDataStart());
+    fPageInfo.Write(S);
 }
 
 //// IterateKeys /////////////////////////////////////////////////////////////
