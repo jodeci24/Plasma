@@ -18,4 +18,8 @@ if(USE_VLD)
     target_link_libraries(plDNS ${VLD_LIBRARY})
 endif()
 
+if(WIN32)
+    target_link_libraries(plDNS Ws2_32)
+endif(WIN32)
+
 source_group("Source Files" FILES ${plDNS_SOURCES})

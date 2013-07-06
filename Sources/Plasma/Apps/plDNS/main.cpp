@@ -133,6 +133,11 @@ void callback(void *arg, int status, int timeouts, struct hostent *host)
 
 int main(int argc, char *argv[])
 {
+#ifdef HS_BUILD_FOR_WIN32
+    WSADATA p;
+    WSAStartup((2 << 8) | 2, &p);
+#endif
+
     if (argc < 2) {
         cout << "USAGE: plDNS [HOSTNAME]" << endl;
         return -1;
