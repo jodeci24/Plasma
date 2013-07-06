@@ -44,6 +44,7 @@ find_package(Ogg REQUIRED)    #TODO: Not required if we aren't building the clie
 find_package(Vorbis REQUIRED) #TODO: Not required if we aren't building the client
 find_package(Speex REQUIRED)  #TODO: Not required if we aren't building the client
 find_package(CURL REQUIRED)
+find_package(CARES REQUIRED)
 find_package(PCRE REQUIRED)
 
 if(WIN32)
@@ -57,11 +58,17 @@ find_package(Bink)            #TODO: Find Bink, but don't require it if plPipeli
 #                                    Or better yet, just eliminate bink altogether
 include(PrecompiledHeader)    #Precompiled Header helper macros
 
-# libCurl isn't smart enough to detect this for us, so we have to configure it ourselves
+#libCurl isn't smart enough to detect this for us, so we have to configure it ourselves
 option(CURL_IS_STATIC "Using the static version of libcurl?" ON)
 if(CURL_IS_STATIC)
     add_definitions(-DCURL_STATICLIB)
 endif(CURL_IS_STATIC)
+
+#same for c-ares
+option(CARES_IS_STATIC "Using the static version of c-ares?" ON)
+if(CARES_IS_STATIC)
+    add_definitions(-DCARES_STATICLIB)
+endif(CARES_IS_STATIC)
 
 #libpcre isn't smart enough to detect this either
 option(PCRE_IS_STATIC "Using the static version of libpcre?" ON)
