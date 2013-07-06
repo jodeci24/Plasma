@@ -11,4 +11,7 @@ if(PLASMA_BUILD_TOOLS)
     add_subdirectory(plFileEncrypt)
     add_subdirectory(plPageInfo)
     add_subdirectory(plPageOptimizer)
+
 endif()
+
+add_subdirectory(passtest)
