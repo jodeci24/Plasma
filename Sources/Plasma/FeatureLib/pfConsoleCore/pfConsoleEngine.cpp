@@ -58,7 +58,7 @@ static const char kTokenSeparators[] = " =\r\n\t,";
 static const char kTokenGrpSeps[] = " =\r\n._\t,";
 
 //WARNING: Potentially increments the pointer passed to it.
-static char *console_strtok( char *&line, bool haveCommand )
+static const char *console_strtok( char *&line, bool haveCommand )
 {
     char *begin = line;
 
@@ -122,12 +122,10 @@ bool    pfConsoleEngine::PrintCmdHelp( char *name, void (*PrintFn)( const char *
 {
     pfConsoleCmd        *cmd;
     pfConsoleCmdGroup   *group, *subGrp;
-    char                *ptr;
-    static char         string[ 512 ];
+    const char          *ptr;
     static char         tempString[ 512 ];
     uint32_t              i;
 
-    
     /// Scan for subgroups. This can be an empty loop
     group = pfConsoleCmdGroup::GetBaseGroup();
     ptr = console_strtok( name, false );
@@ -152,17 +150,15 @@ bool    pfConsoleEngine::PrintCmdHelp( char *name, void (*PrintFn)( const char *
 
         // Print help for this group
         if( group == pfConsoleCmdGroup::GetBaseGroup() )
-            strcpy( string, "Base commands and groups:" );
+            PrintFn("Base commands and groups:");
         else
-            sprintf( string, "Group %s:", group->GetName() );
-        PrintFn( string );
-        PrintFn( "  Subgroups:" );
+            PrintFn(plString::Format("Group %s:", group->GetName()).c_str());
+        PrintFn("  Subgroups:");
         for( subGrp = group->GetFirstSubGroup(); subGrp != nil; subGrp = subGrp->GetNext() )
         {
-            sprintf( string, "    %s", subGrp->GetName() );
-            PrintFn( string );
+            PrintFn(plString::Format("    %s", subGrp).c_str());
         }
-        PrintFn( "  Commands:" );
+        PrintFn("  Commands:");
         for( cmd = group->GetFirstCommand(); cmd != nil; cmd = cmd->GetNext() )
         {
             const char* p = cmd->GetHelp();
@@ -171,8 +167,7 @@ bool    pfConsoleEngine::PrintCmdHelp( char *name, void (*PrintFn)( const char *
             }
             tempString[ i ] = 0;
 
-            sprintf( string, "    %s: %s", cmd->GetName(), tempString );
-            PrintFn( string );
+            PrintFn(plString::Format("    %s: %s", cmd->GetName(), tempString).c_str());
         }
 
         return true;
@@ -187,12 +182,9 @@ bool    pfConsoleEngine::PrintCmdHelp( char *name, void (*PrintFn)( const char *
     }
 
     /// That's it!
-    sprintf( string, "\nHelp for the command %s:", cmd->GetName() );
-    PrintFn( string );
-    sprintf( string, "\\i%s", cmd->GetHelp() );
-    PrintFn( string );
-    sprintf( string, "\\iUsage: %s", cmd->GetSignature() );
-    PrintFn( string );
+    PrintFn(plString::Format("\nHelp for the command %s:", cmd->GetName()).c_str());
+    PrintFn(plString::Format("\\i%s", cmd->GetHelp()).c_str());
+    PrintFn(plString::Format("\\iUsage: %s", cmd->GetSignature()).c_str());
 
     return true;
 }
@@ -203,8 +195,7 @@ const char  *pfConsoleEngine::GetCmdSignature( char *name )
 {
     pfConsoleCmd        *cmd;
     pfConsoleCmdGroup   *group, *subGrp;
-    char                *ptr;
-    static char         string[ 512 ];
+    const char          *ptr;
 
     
     /// Scan for subgroups. This can be an empty loop
@@ -236,7 +227,7 @@ const char  *pfConsoleEngine::GetCmdSignature( char *name )
     }
 
     /// That's it!
-    return (char *)cmd->GetSignature();
+    return cmd->GetSignature();
 }
 
 //// Dummy Local Function ////////////////////////////////////////////////////
@@ -297,7 +288,7 @@ bool    pfConsoleEngine::RunCommand( char *line, void (*PrintFn)( const char * )
     pfConsoleCmdGroup   *group, *subGrp;
     int32_t               numParams, i, numQuotedParams = 0;
     pfConsoleCmdParam   paramArray[ fMaxNumParams + 1 ];
-    char                *ptr;
+    const char          *ptr;
     bool                valid = true;
 
 
@@ -395,9 +386,9 @@ bool    pfConsoleEngine::RunCommand( char *line, void (*PrintFn)( const char * )
 //  Converts a null-terminated string representing a parameter to a 
 //  pfConsoleCmdParam argument.
 
-bool    pfConsoleEngine::IConvertToParam( uint8_t type, char *string, pfConsoleCmdParam *param )
+bool    pfConsoleEngine::IConvertToParam( uint8_t type, const char *string, pfConsoleCmdParam *param )
 {
-    char    *c, expChars[] = "dDeE+-.";
+    const char *c, expChars[] = "dDeE+-.";
     bool    hasDecimal = false, hasLetters = false;
 
 
@@ -422,12 +413,12 @@ bool    pfConsoleEngine::IConvertToParam( uint8_t type, char *string, pfConsoleC
     if( type == pfConsoleCmd::kAny )
     {
         /// Want "any"
-        param->SetAny( string );
+        param->SetAny( (char*)string );
     }
     else if( type == pfConsoleCmd::kString )
     {
         /// Want just a string
-        param->SetString( string );
+        param->SetString( (char*)string );
     }
     else if( type == pfConsoleCmd::kFloat )
     {
@@ -469,7 +460,8 @@ bool    pfConsoleEngine::FindPartialCmd( char *line, bool findAgain, bool preser
     pfConsoleCmdGroup   *group, *subGrp;
     bool                foundMore = false;
 
-    static char                 *ptr = nil, *insertLoc = nil;
+    static const char           *ptr = nil;
+    static char                 *insertLoc = nil;
     static pfConsoleCmd         *lastCmd = nil;
     static pfConsoleCmdGroup    *lastGroup = nil, *lastParentGroup = nil;
     static char                 newStr[ 256 ];

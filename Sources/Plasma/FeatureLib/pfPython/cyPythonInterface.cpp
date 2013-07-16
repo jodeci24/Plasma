@@ -2003,9 +2003,7 @@ PyObject* PythonInterface::CreateModule(const char* module)
     if ((m = PyDict_GetItemString(modules, module)) != NULL && PyModule_Check(m))
     {
         // clear it
-        char message[256];
-        sprintf(message,"ERROR! Creating a python module of the same name - %s",module);
-        hsAssert(false,message);
+        hsAssert(false, plString::Format("ERROR! Creating a python module of the same name - %s", module).c_str());
         _PyModule_Clear(m);
     }
 
@@ -2195,7 +2193,7 @@ PyObject* PythonInterface::LoadObject(char* pickle, int32_t size)
 //
 //  RETURNS    : pointer to PyObject that is the result of the command
 //
-bool PythonInterface::RunStringInteractive(char *command, PyObject* module)
+bool PythonInterface::RunStringInteractive(const char *command, PyObject* module)
 {
     PyObject *d, *v;
     // make sure that we're given a good module... or at least one with an address
@@ -2231,7 +2229,7 @@ bool PythonInterface::RunStringInteractive(char *command, PyObject* module)
 //
 //  PURPOSE    : run a python string in a specific module name
 //
-bool PythonInterface::RunString(char *command, PyObject* module)
+bool PythonInterface::RunString(const char *command, PyObject* module)
 {
     PyObject *d, *v;
     // make sure that we're given a good module... or at least one with an address

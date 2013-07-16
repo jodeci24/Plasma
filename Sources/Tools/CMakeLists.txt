@@ -1,12 +1,15 @@
-add_subdirectory(plLocalizationEditor)
-add_subdirectory(plResBrowser)
+if(PLASMA_BUILD_TOOLS)
+    add_subdirectory(plLocalizationEditor)
+    add_subdirectory(plResBrowser)
+    add_subdirectory(plShaderAssembler)
 
-if(BUILD_QT_TOOLS)
-    add_subdirectory(qtResBrowser)
-endif()
+    if(FREETYPE_FOUND)
+        add_subdirectory(plFontConverter)
+    endif()
 
-if(FREETYPE_FOUND)
-    add_subdirectory(plFontConverter)
+    if(BUILD_QT_TOOLS)
+        add_subdirectory(qtResBrowser)
+    endif()
 endif()
 
 # Max Stuff goes below here...

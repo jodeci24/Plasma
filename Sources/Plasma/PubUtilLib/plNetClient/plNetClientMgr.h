@@ -124,21 +124,18 @@ public:
         // must be set by user
         plStateDataRecord* fSDRec;  // the sdl data record
         plUoid  fUoid;              // the object it's meant for
-        uint32_t  fPlayerID;          // the player that originally sent the state
+        uint32_t  fPlayerID;        // the player that originally sent the state
 
         // set by NetClient
         plKey fKey;                 // the key of the object it's meant for
-        double fQueuedTime;
-        int     fQueueTimeResets;
 
-        PendingLoad() : fSDRec(nil),fPlayerID(0),fKey(nil),fQueuedTime(0.0),fQueueTimeResets(0) {}
+        PendingLoad() : fSDRec(nullptr), fPlayerID(0), fKey(nullptr) { }
         ~PendingLoad();
     };
 
 private:
-    // plOperationProgress  *fProgressBar;
-    plOperationProgress *fTaskProgBar;
-    
+    plOperationProgress* fTaskProgBar;
+
     typedef std::list<PendingLoad*> PendingLoadsList;
     PendingLoadsList fPendingLoads;
             
@@ -371,8 +368,10 @@ public:
     
     void NotifyRcvdAllSDLStates();
 
-    plOperationProgress* GetTaskProgBar() { return fTaskProgBar;    }
-    
+    plOperationProgress* GetTaskProgBar() { return fTaskProgBar; }
+    void BeginTask();
+    void EndTask();
+
     bool DebugMsgV(const char* fmt, va_list args) const;
     bool ErrorMsgV(const char* fmt, va_list args) const; 
     bool WarningMsgV(const char* fmt, va_list args) const; 
