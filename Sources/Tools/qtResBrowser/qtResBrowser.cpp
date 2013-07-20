@@ -46,6 +46,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include <QDesktopServices>
 #include <QMenu>
 #include <QMenuBar>
+#include <QMimeData>
 #include <QToolBar>
 #include <QVBoxLayout>
 #include <QGridLayout>
@@ -57,18 +58,14 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include <QUrl>
 
 #include "qtPlasma.h"
-#include "qtTreeIterator.h"
 #include "qtResBrowser.h"
-#include "pnAllCreatables.h"
-#include "plResMgr/plResMgrCreatable.h"
+#include "types/qtCreatable.h"
+
+#include "pnFactory/plCreatable.h"
+#include "pnKeyedObject/hsKeyedObject.h"
 #include "plResMgr/plResMgrSettings.h"
 #include "plResMgr/plRegistryNode.h"
 #include "plResMgr/plPageInfo.h"
-#include "pnKeyedObject/plUoid.h"
-#include "pnKeyedObject/plKey.h"
-#include "pnKeyedObject/plKeyImp.h"
-#include "plMessage/plResMgrHelperMsg.h"
-REGISTER_CREATABLE(plResMgrHelperMsg);
 
 
 qtResBrowser* qtResBrowser::sInstance = nullptr;
@@ -218,7 +215,7 @@ qtResBrowser::qtResBrowser() {
             fMdiArea, SLOT(closeAllSubWindows()));
 
     //connect(fActions[kTreeClose], SIGNAL(triggered()), this, SLOT(treeClose()));
-    //connect(fActions[kTreeEdit], SIGNAL(triggered()), this, SLOT(treeEdit()));
+    connect(fActions[kTreeEdit], SIGNAL(triggered()), this, SLOT(treeEdit()));
     //connect(fActions[kTreeEditPRC], SIGNAL(triggered()), this, SLOT(treeEditPRC()));
     //connect(fActions[kTreePreview], SIGNAL(triggered()), this, SLOT(treePreview()));
     //connect(fActions[kTreeDelete], SIGNAL(triggered()), this, SLOT(treeDelete()));
@@ -245,6 +242,12 @@ void qtResBrowser::closeEvent(QCloseEvent*)
             item->deleteRecur();
 
         delete item;
+    }
+
+    QList<QMdiSubWindow*> windows = fMdiArea->subWindowList();
+    QList<QMdiSubWindow*>::Iterator it;
+    for (it = windows.begin(); it != windows.end(); it++) {
+        (*it)->widget()->close();
     }
 
     // TODO: Save UI Settings
@@ -481,7 +484,7 @@ void qtResBrowser::treeContextMenu(const QPoint& pos)
     }
     else if (item->type() == qtTreeItem::kTypeKO)
     {
-        //menu.addAction(fActions[kTreeEdit]);
+        menu.addAction(fActions[kTreeEdit]);
         //menu.addAction(fActions[kTreeEditPRC]);
         //menu.addAction(fActions[kTreePreview]);
         //menu.addSeparator();
@@ -496,6 +499,16 @@ void qtResBrowser::treeContextMenu(const QPoint& pos)
         //menu.addAction(fActions[kTreeImport]);
     }
     menu.exec(fBrowserTree->viewport()->mapToGlobal(pos));
+}
+
+void qtResBrowser::treeEdit()
+{
+    qtTreeItem* item = static_cast<qtTreeItem*>(fBrowserTree->currentItem());
+    if (item == nullptr || item->key() == nullptr)
+        return;
+
+    plCreatable* pCre = item->key()->VerifyLoaded();
+    editCreatable(pCre);
 }
 
 void qtResBrowser::treeExport()
@@ -626,6 +639,34 @@ void qtResBrowser::saveFile(plRegistryPageNode* page, QString filename)
     page->Write(&outStream);
 
     outStream.Close();
+}
+
+void qtResBrowser::editCreatable(plCreatable* pCre, uint16_t forceType)
+{
+    if (pCre == NULL) {
+        QMessageBox msgBox(QMessageBox::Critical, tr("NULL Object"),
+                           tr("The requested object is not currently loaded"),
+                           QMessageBox::Ok, this);
+        msgBox.exec();
+        return;
+    }
+
+    QList<QMdiSubWindow*> windows = fMdiArea->subWindowList();
+    QList<QMdiSubWindow*>::Iterator it;
+    for (it = windows.begin(); it != windows.end(); it++) {
+        if (((qtCreatable*)(*it)->widget())->isMatch(pCre, forceType)) {
+            fMdiArea->setActiveSubWindow(*it);
+            break;
+        }
+    }
+    if (it == windows.end()) {
+        qtCreatable* win = qtMakeCreatableForm(pCre, this, forceType);
+        if (win != NULL) {
+            QMdiSubWindow* subWin = fMdiArea->addSubWindow(win);
+            subWin->setWindowIcon(win->windowIcon());
+            subWin->show();
+        }
+    }
 }
 
 

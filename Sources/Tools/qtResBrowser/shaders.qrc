@@ -1,0 +1,7 @@
+<!DOCTYPE RCC>
+<RCC>
+    <qresource>
+        <file>shaders/qtMipmapRenderer_vshader.glsl</file>
+        <file>shaders/qtMipmapRenderer_fshader.glsl</file>
+    </qresource>
+</RCC>

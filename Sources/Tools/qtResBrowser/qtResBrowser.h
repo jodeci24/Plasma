@@ -57,9 +57,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "qtTreeItem.h"
 #include "qtTreeIterator.h"
-#include "plResMgr/plResManager.h"
-#include "pnKeyedObject/plUoid.h"
 
+class plCreatable;
 class plRegistryPageNode;
 
 class qtResBrowser : public QMainWindow
@@ -131,7 +130,7 @@ public:
     void loadFile(QString filename);
     void saveFile(plRegistryPageNode* page, QString filename);
 //    void saveProps(QPlasmaTreeItem* item);
-//    void editCreatable(plCreatable* pCre, short forceType = -1);
+    void editCreatable(plCreatable* pCre, uint16_t forceType = 0x8000);
 
 protected:
     virtual void closeEvent(QCloseEvent* evt);
@@ -151,7 +150,7 @@ public slots:
 //    void createNewObject();
 
 //    void treeClose();
-//    void treeEdit();
+    void treeEdit();
 //    void treeEditPRC();
 //    void treePreview();
 //    void treeDelete();
