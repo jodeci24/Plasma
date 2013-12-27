@@ -185,18 +185,6 @@ void AsyncCoreDestroy (unsigned waitMs) {
 }
 
 //============================================================================
-void AsyncSignalShutdown () {
-    ASSERT(g_api.signalShutdown);
-    g_api.signalShutdown();
-}
-
-//============================================================================
-void AsyncWaitForShutdown () {
-    ASSERT(g_api.waitForShutdown);
-    g_api.waitForShutdown();
-}
-
-//============================================================================
 void AsyncSleep (unsigned sleepMs) {
     ASSERT(g_api.sleep);
     g_api.sleep(sleepMs);

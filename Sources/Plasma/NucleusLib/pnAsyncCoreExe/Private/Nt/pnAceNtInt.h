@@ -231,22 +231,6 @@ bool NtSocketWrite (
     unsigned        bytes,
     void *          param
 );
-void NtSocketSetNotifyProc (
-    AsyncSocket             sock,
-    FAsyncNotifySocketProc  notifyProc
-);
-void NtSocketSetBacklogAlloc (
-    AsyncSocket     sock,
-    unsigned        bufferSize
-);
-unsigned NtSocketStartListening (
-    const plNetAddress&     listenAddr,
-    FAsyncNotifySocketProc  notifyProc
-);
-void NtSocketStopListening (
-    const plNetAddress&     listenAddr,
-    FAsyncNotifySocketProc  notifyProc
-);
 void NtSocketEnableNagling (
     AsyncSocket             conn,
     bool                    enable

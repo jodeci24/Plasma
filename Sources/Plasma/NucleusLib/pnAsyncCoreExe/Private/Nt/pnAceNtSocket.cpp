@@ -74,19 +74,6 @@ static const unsigned   kBacklogFailMs      = 2*60*1000;
 
 static const unsigned   kMinBacklogBytes    = 4 * 1024;
 
-struct NtListener {
-    LINK(NtListener)        nextPort;
-    SOCKET                  hSocket;
-    plNetAddress            addr;
-    FAsyncNotifySocketProc  notifyProc;
-    int                     listenCount;
-
-    ~NtListener () {
-        if (hSocket != INVALID_SOCKET)
-            closesocket(hSocket);
-    }
-};
-
 struct NtOpConnAttempt : Operation {
     AsyncCancelId           cancelId;
     bool                    canceled;
@@ -131,7 +118,6 @@ struct NtSock : NtObject {
 
 
 static CNtCritSect                      s_listenCrit;
-static LISTDECL(NtListener, nextPort)   s_listenList;
 static LISTDECL(NtOpConnAttempt, link)  s_connectList;
 static bool                             s_runListenThread;
 static unsigned                         s_nextConnectCancelId = 1;
@@ -173,27 +159,6 @@ NtSock::~NtSock () {
         closesocket((SOCKET) handle);
 
     PerfSubCounter(kAsyncPerfSocketsCurr, 1);
-}
-
-//===========================================================================
-// must be called inside s_listenCrit
-static bool ListenPortIncrement (
-    const plNetAddress&     listenAddr,
-    FAsyncNotifySocketProc  notifyProc,
-    int                     count
-) {
-    NtListener * listener;
-    for (listener = s_listenList.Head(); listener; listener = s_listenList.Next(listener)) {
-        if (listener->addr != listenAddr)
-            continue;
-        if (listener->notifyProc != notifyProc)
-            continue;
-
-        listener->listenCount += count;
-        ASSERT(listener->listenCount >= 0);
-        break;
-    }
-    return listener != 0;
 }
 
 //===========================================================================
@@ -249,49 +214,7 @@ static bool SocketDispatchRead (NtSock * sock) {
     if (sock->notifyProc)
         return sock->notifyProc((AsyncSocket) sock, kNotifySocketRead, &sock->opRead.read, &sock->userState);
 
-    ASSERT(sock->opRead.read.buffer == sock->buffer);
-    ASSERT(sock->opRead.read.bytes);
-
-    // make sure there's an event procedure to handle this event
-    AsyncNotifySocketListen notify;
-    unsigned bytesProcessed;
-    sock->notifyProc = AsyncSocketFindNotifyProc(
-        sock->opRead.read.buffer,
-        sock->opRead.read.bytes,
-        &bytesProcessed,
-        &notify.connType, 
-        &notify.buildId,
-        &notify.buildType,
-        &notify.branchId,
-        &notify.productId
-    );
-    if (!sock->notifyProc)
-        return false;
-
-    // perform kNotifySocketListenSuccess
-    SocketGetAddresses(sock, &notify.localAddr, &notify.remoteAddr);
-    notify.param            = nil;
-    notify.asyncId          = 0;
-    notify.addr             = sock->addr;
-    sock->userState         = nil;
-    sock->connType          = notify.connType;
-    notify.buffer           = sock->opRead.read.buffer + bytesProcessed;
-    notify.bytes            = sock->opRead.read.bytes - bytesProcessed;
-    notify.bytesProcessed   = 0;
-    if (!sock->notifyProc((AsyncSocket) sock, kNotifySocketListenSuccess, &notify, &sock->userState))
-        return false;
-    bytesProcessed += notify.bytesProcessed;
-
-    // if we didn't use up all the bytes, dispatch a read operation
-    if (0 != (sock->opRead.read.bytes -= bytesProcessed)) {
-        sock->opRead.read.buffer += bytesProcessed;
-        if (!sock->notifyProc((AsyncSocket) sock, kNotifySocketRead, &sock->opRead.read, &sock->userState))
-            return false;
-    }
-
-    // add bytes used by IOsFindListenProc and kNotifySocketListenSuccess
-    sock->opRead.read.bytesProcessed += bytesProcessed;
-    return true;
+    return false;
 }
 
 //===========================================================================
@@ -474,150 +397,6 @@ static bool SocketInitConnect (
 }
 
 //===========================================================================
-static void SocketInitListen (
-    NtSock * const      sock,
-    const plNetAddress& listenAddr,
-    FAsyncNotifySocketProc notifyProc
-) {
-    for (;;) {
-        // attach to I/O completion port
-        if (!INtConnInitialize(sock))
-            break;
-
-        sock->addr = listenAddr;
-
-        if (notifyProc) {
-            // perform kNotifySocketListenSuccess
-            AsyncNotifySocketListen notify;
-            SocketGetAddresses(sock, &notify.localAddr, &notify.remoteAddr);
-            notify.param            = nil;
-            notify.asyncId          = 0;
-            notify.connType         = 0;
-            notify.buildId          = 0;
-            notify.buildType        = 0;
-            notify.branchId         = 0;
-            notify.productId        = kNilUuid;
-            notify.addr             = listenAddr;
-            notify.buffer           = sock->opRead.read.buffer;
-            notify.bytes            = 0;
-            notify.bytesProcessed   = 0;
-            sock->notifyProc        = notifyProc;
-            if (!sock->notifyProc((AsyncSocket) sock, kNotifySocketListenSuccess, &notify, &sock->userState))
-                break;
-        }
-
-        // start reading from the socket
-        SocketStartAsyncRead(sock);
-        break;
-    }
-
-    INtConnCompleteOperation(sock);
-}
-
-//===========================================================================
-static SOCKET ListenSocket(plNetAddress* listenAddr) {
-    // create a new socket to listen
-    SOCKET s;
-    if (INVALID_SOCKET == (s = socket(AF_INET, SOCK_STREAM, 0))) {
-        LogMsg(kLogError, "socket create failed");
-        return INVALID_SOCKET;
-    }
-
-    do {
-    /* this code was an attempt to enable the server to close and then re-open the same port
-       for listening. It doesn't appear to work, and moreover, it causes the bind to signal
-       success even though the port cannot be opened (for example, because another application
-       has already opened the port).
-        static const BOOL s_reuseAddr = true;
-        setsockopt(
-            s, 
-            SOL_SOCKET, 
-            SO_REUSEADDR, 
-            (const char *) &s_reuseAddr, 
-            sizeof(s_reuseAddr)
-        );
-        static const LINGER s_linger = { true, 0 };
-        setsockopt(
-            s, 
-            SOL_SOCKET, 
-            SO_LINGER, 
-            (const char *) &s_linger, 
-            sizeof(s_linger)
-        );
-    */
-
-        uint32_t node = listenAddr->GetHost();
-        uint16_t port = listenAddr->GetPort();
-
-        // bind socket to port
-        sockaddr_in addr;
-        addr.sin_family = AF_INET;
-        addr.sin_port   = htons(port);
-        addr.sin_addr.S_un.S_addr = node;
-        memset(addr.sin_zero, 0, sizeof(addr.sin_zero));
-        if (bind(s, (sockaddr *) &addr, sizeof(addr))) {
-            plString str = listenAddr->AsString();
-            LogMsg(kLogError, "bind to addr %s failed (err %u)", str.c_str(), WSAGetLastError());
-            break;
-        }
-
-        // get portNumber if unknown
-        if (!port) {
-            int addrLen = sizeof(addr);
-            if (getsockname(s, (sockaddr *) &addr, &addrLen)) {
-                LogMsg(kLogError, "getsockname failed");
-                break;
-            }
-
-            if (0 == (port = ntohs(((const sockaddr_in *) &addr)->sin_port))) {
-                LogMsg(kLogError, "bad listen port");
-                break;
-            }
-        }
-
-        // make socket non-blocking
-        u_long nonBlocking = true;
-        if (ioctlsocket(s, FIONBIO, &nonBlocking))
-            LogMsg(kLogError, "ioctlsocket failed (make non-blocking)");
-
-        if (listen(s, kListenBacklog)) {
-            LogMsg(kLogError, "socket listen failed");
-            break;
-        }
- 
-        // success!
-        listenAddr->SetPort(port);
-        return s;
-    } while (false);
-
-    // failure!
-    closesocket(s);
-    listenAddr->SetPort(0);
-    return INVALID_SOCKET;
-}
-
-//===========================================================================
-// must be called while inside s_listenCrit!
-static void ListenPrepareListeners (fd_set * readfds) {
-    FD_ZERO(readfds);
-    for (NtListener *next, *port = s_listenList.Head(); port; port = next) {
-        next = s_listenList.Next(port);
-
-        // destroy unused ports
-        if (!port->listenCount) {
-            delete port;
-            continue;
-        }
-
-        // add port to listen list
-        ASSERT(port->hSocket != INVALID_SOCKET);
-        #pragma warning(disable:4127) // ignore "do { } while (0)" warning
-        FD_SET(port->hSocket, readfds);
-        #pragma warning(default:4127)
-    }
-}
-
-//===========================================================================
 static SOCKET ConnectSocket (unsigned localPort, const plNetAddress& addr) {
     SOCKET s;
     if (INVALID_SOCKET == (s = socket(AF_INET, SOCK_STREAM, 0))) {
@@ -711,7 +490,7 @@ static unsigned THREADCALL ListenThreadProc (AsyncThread *) {
     fd_set writefds;
     for (;;) {
         s_listenCrit.Enter();
-        ListenPrepareListeners(&readfds);
+        FD_ZERO(&readfds);
         ListenPrepareConnectors(&writefds);
         s_listenCrit.Leave();
         if (!s_runListenThread)
@@ -734,23 +513,6 @@ static unsigned THREADCALL ListenThreadProc (AsyncThread *) {
             continue;
 
         s_listenCrit.Enter();
-
-        // complete listen() operations
-        unsigned count = 0;
-        for (NtListener * listener = s_listenList.Head(); listener; listener = s_listenList.Next(listener)) {
-            if (FD_ISSET(listener->hSocket, &readfds)) {
-                SOCKET s;
-                while (INVALID_SOCKET != (s = accept(listener->hSocket, 0, 0))) {
-                    SocketInitListen(
-                        SocketInitCommon(s),
-                        listener->addr,
-                        listener->notifyProc
-                    );
-                    ++count;
-                }
-            }
-        }
-        PerfAddCounter(kAsyncPerfSocketConnAttemptsInTotal, count);
 
         // complete connect() operations
         for (NtOpConnAttempt *next, *op = s_connectList.Head(); op; op = next) {
@@ -917,7 +679,6 @@ void INtSocketStartCleanup (unsigned exitThreadWaitMs) {
 
     s_listenCrit.Enter();
     ASSERT(!s_connectList.Head());
-    ASSERT(!s_listenList.Head());
     s_listenCrit.Leave();
 }
 
@@ -1127,50 +888,6 @@ bool INtSocketOpCompleteQueuedSocketWrite (
 *   Exported functions
 *
 ***/
-
-//===========================================================================
-unsigned NtSocketStartListening (
-    const plNetAddress&     listenAddr,
-    FAsyncNotifySocketProc  notifyProc
-) {
-    s_listenCrit.Enter();
-    StartListenThread();
-    plNetAddress addr = listenAddr;
-    for (;;) {
-        // if the port is already open then just increment the reference count
-        if (ListenPortIncrement(addr, notifyProc, 1))
-            break;
-
-        SOCKET s;
-        if (INVALID_SOCKET == (s = ListenSocket(&addr)))
-            break;
-
-        // create a new listener record
-        NtListener * listener   = s_listenList.New(kListTail, nil, __FILE__, __LINE__);
-        listener->hSocket       = s;
-        listener->addr          = addr;
-        listener->notifyProc    = notifyProc;
-        listener->listenCount   = 1;
-        break;
-    }
-    s_listenCrit.Leave();
-
-    unsigned port = addr.GetPort();
-    if (port)
-        SetEvent(s_listenEvent);
-
-    return port;
-}
-
-//===========================================================================
-void NtSocketStopListening (
-    const plNetAddress&     listenAddr,
-    FAsyncNotifySocketProc  notifyProc
-) {
-    s_listenCrit.Enter();
-    ListenPortIncrement(listenAddr, notifyProc, -1);
-    s_listenCrit.Leave();
-}
 
 //===========================================================================
 void NtSocketConnect (
@@ -1453,23 +1170,6 @@ void NtSocketEnableNagling (AsyncSocket conn, bool enable) {
             LogMsg(kLogError, "setsockopt failed (nagling)");
     }
     sock->critsect.Leave();
-}
-
-//===========================================================================
-void NtSocketSetNotifyProc (
-    AsyncSocket            conn,
-    FAsyncNotifySocketProc notifyProc
-) {
-    NtSock * sock = (NtSock *) conn;
-    ASSERT(sock->ioType == kNtSocket);
-    ((NtSock *) sock)->notifyProc = notifyProc;
-}
-
-//===========================================================================
-void NtSocketSetBacklogAlloc (AsyncSocket conn, unsigned bufferSize) {
-    NtSock * sock = (NtSock *) conn;
-    ASSERT(sock->ioType == kNtSocket);
-    ((NtSock *) sock)->backlogAlloc = bufferSize;
 }
 
 } using namespace Nt;
