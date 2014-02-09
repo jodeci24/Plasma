@@ -1,3 +1,5 @@
+add_subdirectory(API)
+
 include_directories(../../CoreLib)
 include_directories(../../FeatureLib)
 include_directories(../../NucleusLib)
