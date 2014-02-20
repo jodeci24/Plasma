@@ -40,67 +40,31 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 *==LICENSE==*/
 
-#ifndef _plNetCore_h_
-#define _plNetCore_h_
-
 #include "plNetCoreConnInfo.h"
-#include "plNetCoreThreadInfo.h"
+#include "plNetCore.h"
 
-class plNetCore
+#include "plSockets/plTcpSocket.h"
+
+plNetCoreConnInfo::plNetCoreConnInfo(ConnType type, plNetCore* nc)
+: fSocket(nullptr), fAddress(), fNetCore(nc), fConnType(type)
 {
-public:
-    enum {
-        kNetOK                  =  0,
-        kNetErr                 = -1,
-        kErrEmpty               = -2,
-        kErrInvalidPeer         = -3,
-        kErrOutQueFull          = -4,
-        kErrIllegalSendFlags    = -5,
-        kErrCantFindHost        = -6,
-        kErrInQueFull           = -7,
-        kErrMsgExpired          = -8,
-        kErrTryTooSoon          = -9,
-        kErrFragment            = -10,
-        kErrUnknownMsg          = -11,
-        kErrSockSendFailure     = -12,
-        kErrSockRecvFailure     = -13,
-        kErrPeerMarkedDeleted   = -14,
-        kErrPeerExists          = -15,
-        kErrValidationFailed    = -16,
-        kErrInvalidValidationID = -17,
-        // No error -18?
-        kErrMsgTooBig           = -19,
-        kErrUnimplemented       = -20,
-        kErrMsgVersionWrong     = -21
-    };
+}
 
-private:
-    static plNetCore* gInstance;
-
-    plNetCoreConnInfo* fConnections[plNetCoreConnInfo::kNumConnTypes];
-    plNetCoreThreadInfo* fThreadInfo;
+plNetCoreConnInfo::~plNetCoreConnInfo()
+{
+    delete fSocket;
+}
 
 
-    friend class plNetCoreThreadInfo;
+int32_t plNetCoreConnInfo::Connect(const plNetAddress& addr)
+{
+    fAddress = addr;
 
-protected:
-    plNetCore();
+    fSocket = new plTcpSocket();
 
-    void ISend(size_t& count);
-    void IRecv(size_t& count);
-
-public:
-    static void Initialize();
-    static void Shutdown();
-
-    static bool IsInitialized() { return !!gInstance; }
-    static plNetCore* Instance() { return gInstance; }
-
-    int32_t Connect(plNetCoreConnInfo::ConnType type, const plNetAddress& addr);
-
-    void Send(size_t& count);
-    void Recv(size_t& count);
-};
-
-#endif //_plNetCore_h_
-
+    if (fSocket->ActiveOpenNonBlocking(fAddress)) {
+        return plNetCore::kNetOK;
+    } else {
+        return plNetCore::kNetErr;
+    }
+}

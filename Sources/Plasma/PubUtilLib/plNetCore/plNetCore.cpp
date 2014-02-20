@@ -44,15 +44,17 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plNetCore.h"
 #include "plNetCoreDns.h"
 
+#include "pnNetCommon/plNetApp.h"
+
 #ifdef HS_BUILD_FOR_WIN32
 #   include "hsWindows.h"
 #endif
 
-bool plNetCore::fInitialized = false;
+plNetCore* plNetCore::gInstance = nullptr;
 
 void plNetCore::Initialize()
 {
-    hsAssert(!fInitialized, "NetCore already initialized!");
+    hsAssert(!gInstance, "NetCore already initialized!");
 
 #ifdef HS_BUILD_FOR_WIN32
     // Windows network init
@@ -63,15 +65,16 @@ void plNetCore::Initialize()
     // Initialize the subsystems
     plNetCoreDns::Initialize();
 
-    fInitialized = true;
+    gInstance = new plNetCore();
 }
 
 
 void plNetCore::Shutdown()
 {
-    hsAssert(fInitialized, "NetCore was never initialized!");
+    hsAssert(gInstance, "NetCore was never initialized!");
 
-    fInitialized = false;
+    delete gInstance;
+    gInstance = nullptr;
 
     // Shutdown the subsystems
     plNetCoreDns::Shutdown();
@@ -80,4 +83,73 @@ void plNetCore::Shutdown()
     // Cleanup for Win32
     WSACleanup();
 #endif
+}
+
+
+plNetCore::plNetCore()
+{
+    for (int i = 0; i < plNetCoreConnInfo::kNumConnTypes; i++) {
+        fConnections[i] = nullptr;
+    }
+
+    plNetApp* netapp = plNetApp::GetInstance();
+    if (netapp && netapp->GetFlagsBit(plNetApp::kNetCoreSingleThreaded)) {
+        fThreadInfo = nullptr;
+    } else {
+        fThreadInfo = new plNetCoreThreadInfo(this);
+    }
+}
+
+
+int32_t plNetCore::Connect(plNetCoreConnInfo::ConnType type, const plNetAddress& addr)
+{
+    hsAssert(type != plNetCoreConnInfo::kInvalid, "Invalid connection type");
+
+    if (fConnections[type]) {
+        // TODO: Figure out connection closing
+    }
+
+    switch (type) {
+        case plNetCoreConnInfo::kGate:
+            fConnections[type] = new plGateConnInfo(this);
+            break;
+        default:
+            return kErrInvalidPeer;
+    }
+
+    int32_t ret = fConnections[type]->Connect(addr);
+
+    if (ret != plNetCore::kNetOK) {
+        return ret;
+    }
+
+    // Add the socket to the read FD set
+
+    return ret;
+}
+
+
+void plNetCore::ISend(size_t& count) {
+    count = 0;
+}
+
+void plNetCore::Send(size_t& count) {
+    if (fThreadInfo) {
+        hsSleep::Sleep(0);
+    } else {
+        ISend(count);
+    }
+}
+
+
+void plNetCore::IRecv(size_t& count) {
+    count = 0;
+}
+
+void plNetCore::Recv(size_t& count) {
+    if (fThreadInfo) {
+        hsSleep::Sleep(0);
+    } else {
+        IRecv(count);
+    }
 }

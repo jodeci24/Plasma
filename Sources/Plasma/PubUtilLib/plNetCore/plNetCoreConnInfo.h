@@ -40,67 +40,47 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 *==LICENSE==*/
 
-#ifndef _plNetCore_h_
-#define _plNetCore_h_
+#ifndef _plNetCoreConnInfo_h_
+#define _plNetCoreConnInfo_h_
 
-#include "plNetCoreConnInfo.h"
-#include "plNetCoreThreadInfo.h"
+#include "pnNetCommon/plNetAddress.h"
 
-class plNetCore
+class plTcpSocket;
+class plNetCore;
+
+class plNetCoreConnInfo
 {
 public:
-    enum {
-        kNetOK                  =  0,
-        kNetErr                 = -1,
-        kErrEmpty               = -2,
-        kErrInvalidPeer         = -3,
-        kErrOutQueFull          = -4,
-        kErrIllegalSendFlags    = -5,
-        kErrCantFindHost        = -6,
-        kErrInQueFull           = -7,
-        kErrMsgExpired          = -8,
-        kErrTryTooSoon          = -9,
-        kErrFragment            = -10,
-        kErrUnknownMsg          = -11,
-        kErrSockSendFailure     = -12,
-        kErrSockRecvFailure     = -13,
-        kErrPeerMarkedDeleted   = -14,
-        kErrPeerExists          = -15,
-        kErrValidationFailed    = -16,
-        kErrInvalidValidationID = -17,
-        // No error -18?
-        kErrMsgTooBig           = -19,
-        kErrUnimplemented       = -20,
-        kErrMsgVersionWrong     = -21
+    enum ConnType {
+        kInvalid    = -1,
+
+        kGate,
+        kAuth,
+        kFile,
+        kGame,
+
+        kNumConnTypes
     };
 
-private:
-    static plNetCore* gInstance;
-
-    plNetCoreConnInfo* fConnections[plNetCoreConnInfo::kNumConnTypes];
-    plNetCoreThreadInfo* fThreadInfo;
-
-
-    friend class plNetCoreThreadInfo;
-
 protected:
-    plNetCore();
-
-    void ISend(size_t& count);
-    void IRecv(size_t& count);
+    plTcpSocket*    fSocket;
+    plNetAddress    fAddress;
+    plNetCore*      fNetCore;
+    ConnType        fConnType;
 
 public:
-    static void Initialize();
-    static void Shutdown();
+    plNetCoreConnInfo(ConnType type, plNetCore* nc);
+    virtual ~plNetCoreConnInfo();
 
-    static bool IsInitialized() { return !!gInstance; }
-    static plNetCore* Instance() { return gInstance; }
-
-    int32_t Connect(plNetCoreConnInfo::ConnType type, const plNetAddress& addr);
-
-    void Send(size_t& count);
-    void Recv(size_t& count);
+    int32_t Connect(const plNetAddress& addr);
 };
 
-#endif //_plNetCore_h_
 
+class plGateConnInfo : public plNetCoreConnInfo
+{
+public:
+    plGateConnInfo(plNetCore* nc)
+        : plNetCoreConnInfo(plNetCoreConnInfo::kGate, nc) { }
+};
+
+#endif //_plNetCoreConnInfo_h_
