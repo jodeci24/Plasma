@@ -263,10 +263,12 @@ REGISTER_CREATABLE(plSwapSpansRefMsg);
 
 #include "plShadowCastMsg.h"
 REGISTER_CREATABLE(plShadowCastMsg);
+#endif
 
 #include "plResMgrHelperMsg.h"
 REGISTER_CREATABLE(plResMgrHelperMsg);
 
+#ifndef MINIMAL_GL_BUILD
 #include "plBulletMsg.h"
 REGISTER_CREATABLE(plBulletMsg);
 
