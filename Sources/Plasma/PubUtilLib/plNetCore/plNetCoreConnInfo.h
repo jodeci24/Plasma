@@ -44,8 +44,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #define _plNetCoreConnInfo_h_
 
 #include "pnNetCommon/plNetAddress.h"
+#include "plSockets/plTcpSocket.h"
 
-class plTcpSocket;
 class plNetCore;
 
 class plNetCoreConnInfo
@@ -73,6 +73,8 @@ public:
     virtual ~plNetCoreConnInfo();
 
     int32_t Connect(const plNetAddress& addr);
+
+    operator plSocket&() { return *fSocket; }
 };
 
 

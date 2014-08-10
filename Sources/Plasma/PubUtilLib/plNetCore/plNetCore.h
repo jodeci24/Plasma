@@ -44,8 +44,30 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #define _plNetCore_h_
 
 #include "plNetCoreConnInfo.h"
-#include "plNetCoreThreadInfo.h"
+#include "plSockets/plFdSet.h"
 
+class plNetCoreThreadInfo;
+
+
+/**
+* The master network communication/coordination class.
+*
+* It stores the handles to the server socket connections, and handles sending &
+* receiving messages.
+* All messages going over the network must pass through here.
+*
+* It can operate in threaded mode or non-threaded mode.
+* In threaded mode, messages to be sent will be queued in the main thread and
+* sent in a plNetCoreSendThread.
+* In non-threaded mode, messages will be sent immediately.
+*
+* For receiving in threaded mode, messages will be added to the queue as they
+* are read from the socket.
+* In non-threaded mode, ???
+*
+* The static Initialize and Shutdown methods are used for handling the Win32
+* WSA API initialization. They should be called from somewhere in plClient.
+*/
 class plNetCore
 {
 public:
@@ -77,14 +99,18 @@ public:
 private:
     static plNetCore* gInstance;
 
-    plNetCoreConnInfo* fConnections[plNetCoreConnInfo::kNumConnTypes];
-    plNetCoreThreadInfo* fThreadInfo;
+    plNetCoreConnInfo*      fConnections[plNetCoreConnInfo::kNumConnTypes];
+    plNetCoreThreadInfo*    fThreadInfo;
+    plFdSet                 fReads;
 
 
     friend class plNetCoreThreadInfo;
+    friend class plNetCoreSendThread;
+    friend class plNetCoreRecvThread;
 
 protected:
     plNetCore();
+    ~plNetCore();
 
     void ISend(size_t& count);
     void IRecv(size_t& count);

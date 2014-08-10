@@ -65,6 +65,6 @@ int32_t plNetCoreConnInfo::Connect(const plNetAddress& addr)
     if (fSocket->ActiveOpenNonBlocking(fAddress)) {
         return plNetCore::kNetOK;
     } else {
-        return plNetCore::kNetErr;
+        return fSocket->GetLastError();
     }
 }

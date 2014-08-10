@@ -44,8 +44,56 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #define _plNetCoreThreadInfo_h_
 
 #include "hsThread.h"
+#include "plNetCore.h"
 
-class plNetCore;
+#include <mutex>
+
+
+class plNetCoreThread : public hsThread
+{
+protected:
+    plNetCore* fNetCore;
+
+public:
+    plNetCoreThread(plNetCore* nc) : hsThread(), fNetCore(nc) {}
+    virtual ~plNetCoreThread() {}
+};
+
+
+class plNetCoreRecvThread : public plNetCoreThread
+{
+public:
+    plNetCoreRecvThread(plNetCore* nc) : plNetCoreThread(nc) { }
+    virtual ~plNetCoreRecvThread() {}
+
+    virtual hsError Run() {
+        while (!GetQuit()) {
+            size_t count;
+            fNetCore->IRecv(count);
+        }
+
+        return hsOK;
+    }
+};
+
+
+class plNetCoreSendThread : public plNetCoreThread
+{
+public:
+    plNetCoreSendThread(plNetCore* nc) : plNetCoreThread(nc) { }
+    virtual ~plNetCoreSendThread() {}
+
+    virtual hsError Run() {
+        while (!GetQuit()) {
+            size_t count;
+            fNetCore->ISend(count);
+        }
+
+        return hsOK;
+    }
+};
+
+
 
 class plNetCoreThreadInfo
 {
@@ -54,13 +102,23 @@ protected:
     hsThread* fRecvThread;
 
 public:
-    plNetCoreThreadInfo(plNetCore* nc) { }
-};
+    std::mutex fSetMutex;
 
-class plNetCoreThread : public hsThread
-{
-protected:
-    plNetCore* fNetCore;
+public:
+    plNetCoreThreadInfo(plNetCore* nc)
+    {
+        fSendThread = new plNetCoreSendThread(nc);
+        fSendThread->Start();
+
+        fRecvThread = new plNetCoreRecvThread(nc);
+        fRecvThread->Start();
+    }
+
+    ~plNetCoreThreadInfo()
+    {
+        fSendThread->Stop();
+        fRecvThread->Stop();
+    }
 };
 
 #endif //_plNetCoreThreadInfo_h_

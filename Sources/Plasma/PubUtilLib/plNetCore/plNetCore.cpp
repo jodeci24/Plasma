@@ -43,12 +43,27 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "HeadSpin.h"
 #include "plNetCore.h"
 #include "plNetCoreDns.h"
+#include "plNetCoreThreadInfo.h"
 
 #include "pnNetCommon/plNetApp.h"
+
+#include <thread> // This should be pulled in by plNetCoreThreadInfo eventually
 
 #ifdef HS_BUILD_FOR_WIN32
 #   include "hsWindows.h"
 #endif
+
+
+#define LOCK(mtx) \
+    std::unique_lock<std::mutex> lock_##mtx; \
+    if (fThreadInfo) { \
+        lock_##mtx = std::unique_lock<std::mutex>(fThreadInfo->mtx); \
+    }
+
+#define UNLOCK(mtx) \
+    if (fThreadInfo) { \
+        lock_##mtx.unlock(); \
+    }
 
 plNetCore* plNetCore::gInstance = nullptr;
 
@@ -100,6 +115,14 @@ plNetCore::plNetCore()
     }
 }
 
+plNetCore::~plNetCore()
+{
+    if (fThreadInfo)
+    {
+        delete fThreadInfo;
+    }
+}
+
 
 int32_t plNetCore::Connect(plNetCoreConnInfo::ConnType type, const plNetAddress& addr)
 {
@@ -120,10 +143,16 @@ int32_t plNetCore::Connect(plNetCoreConnInfo::ConnType type, const plNetAddress&
     int32_t ret = fConnections[type]->Connect(addr);
 
     if (ret != plNetCore::kNetOK) {
+        plPrintf("Got socket error: {}\n", strerror(ret));
         return ret;
     }
 
+    LOCK(fSetMutex)
+
     // Add the socket to the read FD set
+    fReads.SetForSocket(static_cast<plSocket&>(*fConnections[type]));
+
+    UNLOCK(fSetMutex)
 
     return ret;
 }
@@ -135,7 +164,7 @@ void plNetCore::ISend(size_t& count) {
 
 void plNetCore::Send(size_t& count) {
     if (fThreadInfo) {
-        hsSleep::Sleep(0);
+        std::this_thread::yield();
     } else {
         ISend(count);
     }
@@ -144,11 +173,31 @@ void plNetCore::Send(size_t& count) {
 
 void plNetCore::IRecv(size_t& count) {
     count = 0;
+
+    LOCK(fSetMutex)
+    plFdSet reads = fReads;
+    UNLOCK(fSetMutex)
+
+    char* buf = new char[1024];
+    if (reads.WaitForRead(false, 1000) > 0)
+    {
+        for (int i = 0; i < plNetCoreConnInfo::kNumConnTypes; i++)
+        {
+            memset(buf, '\0', 1024);
+
+            if (fConnections[i] && reads.IsSetFor(static_cast<plSocket&>(*fConnections[i])))
+            {
+                plNet::Read(static_cast<plSocket&>(*fConnections[i]).GetSocket(), buf, arrsize(buf));
+
+                plPrintf("{}", buf);
+            }
+        }
+    }
 }
 
 void plNetCore::Recv(size_t& count) {
     if (fThreadInfo) {
-        hsSleep::Sleep(0);
+        std::this_thread::yield();
     } else {
         IRecv(count);
     }
