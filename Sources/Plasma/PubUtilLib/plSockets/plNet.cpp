@@ -42,24 +42,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plNet.h"
 
 ////////////////////////////////////////////////////
-
-plNet   plNet::_;
-
-////////////////////////////////////////////////////
 // Windows socket interface
 #if HS_BUILD_FOR_WIN32
-
-plNet::plNet()
-{        
-    static struct WSAData wsa;
-    WSAStartup(0x0101, &wsa);
-}
-
-plNet::~plNet()
-{
-    WSACleanup();
-}
-
 SOCKET plNet::NewUDP()
 {
     return ::socket(AF_INET, SOCK_DGRAM, 0);
@@ -68,11 +52,16 @@ SOCKET plNet::NewUDP()
 SOCKET plNet::NewTCP()
 {
     SOCKET x = ::socket(AF_INET, SOCK_STREAM, 0);
-    unsigned int timeoutval;
-    timeoutval = kDefaultSocketTimeout;
-    setsockopt(x, SOL_SOCKET, (int)SO_RCVTIMEO,(const char*)&timeoutval,sizeof(timeoutval));
-    timeoutval = kDefaultSocketTimeout;
-    setsockopt(x, SOL_SOCKET, (int)SO_SNDTIMEO,(const char*)&timeoutval,sizeof(timeoutval));
+
+    if (x != kBadSocket)
+    {
+        unsigned int timeoutval;
+        timeoutval = kDefaultSocketTimeout;
+        setsockopt(x, SOL_SOCKET, (int)SO_RCVTIMEO,(const char*)&timeoutval,sizeof(timeoutval));
+        timeoutval = kDefaultSocketTimeout;
+        setsockopt(x, SOL_SOCKET, (int)SO_SNDTIMEO,(const char*)&timeoutval,sizeof(timeoutval));
+    }
+
     return x;
 }
 
@@ -209,12 +198,6 @@ const char * plNet::GetErrorMsg(int error)
 
 #include <unistd.h>
 
-plNet::plNet()
-{ }
-
-plNet::~plNet()
-{ }
-
 SOCKET plNet::NewUDP()
 {
     return ::socket(AF_INET, SOCK_DGRAM, 0);
@@ -223,11 +206,16 @@ SOCKET plNet::NewUDP()
 SOCKET plNet::NewTCP()
 {
     SOCKET x = ::socket(AF_INET, SOCK_STREAM, 0);
-    unsigned int timeoutval;
-    timeoutval = kDefaultSocketTimeout;
-    setsockopt(x, SOL_SOCKET, (int)SO_RCVTIMEO,(const char*)&timeoutval,sizeof(timeoutval));
-    timeoutval = kDefaultSocketTimeout;
-    setsockopt(x, SOL_SOCKET, (int)SO_SNDTIMEO,(const char*)&timeoutval,sizeof(timeoutval));
+
+    if (x != kBadSocket)
+    {
+        unsigned int timeoutval;
+        timeoutval = kDefaultSocketTimeout;
+        setsockopt(x, SOL_SOCKET, (int)SO_RCVTIMEO, (const char*)&timeoutval, sizeof(timeoutval));
+        timeoutval = kDefaultSocketTimeout;
+        setsockopt(x, SOL_SOCKET, (int)SO_SNDTIMEO, (const char*)&timeoutval, sizeof(timeoutval));
+    }
+
     return x;
 }
 

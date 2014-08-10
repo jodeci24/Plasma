@@ -57,10 +57,10 @@ public:
 
 public:
     plFdSet();
-    void SetForSocket(plSocket & in);
-    void ClearForSocket(plSocket & in);
-    bool IsSetFor(plSocket & in);
-    bool IsErrFor(plSocket & in);
+    void SetForSocket(plSocket& in);
+    void ClearForSocket(plSocket& in);
+    bool IsSetFor(plSocket& in);
+    bool IsErrFor(plSocket& in);
     int WaitForRead(bool shouldZeroFds, unsigned long timeoutMillis=kInfinite);
     int WaitForWrite(bool shouldZeroFds, unsigned long timeoutMillis=kInfinite);
     int WaitForError(bool shouldZeroFds, unsigned long timeoutMillis=0);

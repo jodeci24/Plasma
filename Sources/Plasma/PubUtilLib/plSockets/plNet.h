@@ -49,10 +49,11 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "hsWindows.h"
 
-const int   kBlockingError          = WSAEWOULDBLOCK;
-const int   kTimeoutError           = WSAETIMEDOUT;    
+const int       kBlockingError      = WSAEWOULDBLOCK;
+const int       kTimeoutError       = WSAETIMEDOUT;
+const int       kInProgressError    = WSAEINPROGRESS;
 const SOCKET    kBadSocket          = 0xffffffff;
-typedef int socklen_t;
+typedef int     socklen_t;
 
 
 ////////////////////////////////////////////////////
@@ -68,9 +69,10 @@ typedef int socklen_t;
 #include <netdb.h>
 #include <errno.h>
 
-typedef int SOCKET;
-const int   kBlockingError          = EWOULDBLOCK;
-const int   kTimeoutError           = ETIMEDOUT;    
+typedef int     SOCKET;
+const int       kBlockingError      = EWOULDBLOCK;
+const int       kTimeoutError       = ETIMEDOUT;
+const int       kInProgressError    = EINPROGRESS;
 const SOCKET    kBadSocket          = -1;
 
 // must #define BSDBLOCK if compiling on BSD
@@ -86,25 +88,23 @@ struct plNet
     static SOCKET NewUDP();
     static SOCKET NewTCP();
     static int GetError();
-    static int Read(const SOCKET sck, char * buf, const int size);
-    static int Write(const SOCKET sck, const char * buf, const int len);
-    static int ReadFrom(const SOCKET sck, char * buf, int len, sockaddr_in * addr);
-    static int WriteTo(const SOCKET sck, const char * buf, const int len, sockaddr_in * addr);
-    static int Connect(const SOCKET sck, const sockaddr_in * addr);
+    static int Read(const SOCKET sck, char* buf, const int size);
+    static int Write(const SOCKET sck, const char* buf, const int len);
+    static int ReadFrom(const SOCKET sck, char* buf, int len, sockaddr_in* addr);
+    static int WriteTo(const SOCKET sck, const char* buf, const int len, sockaddr_in* addr);
+    static int Connect(const SOCKET sck, const sockaddr_in* addr);
     static int Close(const SOCKET sck);
-    static int Bind(const SOCKET sck, const sockaddr_in * addr);
+    static int Bind(const SOCKET sck, const sockaddr_in* addr);
     static int Listen(const SOCKET sck, const int qsize);
-    static int Accept(const SOCKET sck, sockaddr_in * addr);
-    static int Ioctl(const SOCKET sck, const long flags, unsigned long * val);
-    static const char * GetErrorMsg(int error);
+    static int Accept(const SOCKET sck, sockaddr_in* addr);
+    static int Ioctl(const SOCKET sck, const long flags, unsigned long* val);
+    static const char* GetErrorMsg(int error);
     // TODO: Add get/setsockopt() here
-    ~plNet();
+
 private:
-    static plNet _;
-    plNet();
     // not impl
-    plNet(const plNet &);
-    plNet & operator=(const plNet &);
+    plNet(const plNet&);
+    plNet& operator=(const plNet&);
 };
 
 

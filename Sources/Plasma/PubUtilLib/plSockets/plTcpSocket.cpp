@@ -57,24 +57,23 @@ plTcpSocket::plTcpSocket()
 plTcpSocket::plTcpSocket(SOCKET sck)
 :   plSocket(sck)
 {
-
 }
 
 bool plTcpSocket::operator==(const plTcpSocket & rhs)
 {
-    return fSocket==rhs.fSocket;
+    return fSocket == rhs.fSocket;
 }
 
 // Disable Nagle algorithm.
 int plTcpSocket::SetNoDelay(void)
 {
-    int  nodel = 1;
-    int ret1;    
-    ret1 = setsockopt(fSocket, IPPROTO_TCP, TCP_NODELAY,(char *)&nodel, sizeof(nodel));
-    
-    if(ret1 != 0)
+    int nodel = 1;
+
+    if (setsockopt(fSocket, IPPROTO_TCP, TCP_NODELAY, (char *)&nodel, sizeof(nodel)))
+    {
         return -1;
-    
+    }
+
     return 0;
 }
 
@@ -82,32 +81,43 @@ int plTcpSocket::SetNoDelay(void)
 // Control the behavior of SO_LINGER
 int plTcpSocket::SetLinger(int intervalSecs)
 {
-    linger  ll;        
+    linger ll;
     ll.l_linger = intervalSecs;
-    ll.l_onoff = intervalSecs?1:0;
-    int ret1 = setsockopt(fSocket, SOL_SOCKET, SO_LINGER, (const char *)&ll,sizeof(linger));     
-    if(ret1 != 0)
-        return -1;        
+    ll.l_onoff  = intervalSecs ? 1 : 0;
+
+    if (setsockopt(fSocket, SOL_SOCKET, SO_LINGER, (const char *)&ll, sizeof(linger)))
+    {
+        return -1;
+    }
+
     return 0;
 }
 
 
 int plTcpSocket::SetSendBufferSize(int insize)
 {
-    if (setsockopt(fSocket, (int) SOL_SOCKET, (int) SO_SNDBUF, (char *) &insize, sizeof(int)))
-        return -1;    
+    if (setsockopt(fSocket, (int)SOL_SOCKET, (int)SO_SNDBUF, (char*)&insize, sizeof(int)))
+    {
+        return -1;
+    }
+
     return 0;
 }
 
 bool plTcpSocket::ActiveOpen(plNetAddress & addr)
 {
     SetSocket(plNet::NewTCP());
-    if(fSocket == kBadSocket)
+
+    if (fSocket == kBadSocket)
+    {
         return false;
-    
-    if(plNet::Connect(fSocket, &addr.GetAddressInfo()) != 0)
+    }
+
+    if (plNet::Connect(fSocket, &addr.GetAddressInfo()) != 0)
+    {
         return ErrorClose();
-    
+    }
+
     return true;
 }
 
@@ -115,14 +125,20 @@ bool plTcpSocket::ActiveOpen(plNetAddress & addr)
 bool plTcpSocket::ActiveOpenNonBlocking(plNetAddress & addr)
 {
     SetSocket(plNet::NewTCP());
-    if(fSocket == kBadSocket)
+
+    if (fSocket == kBadSocket)
+    {
         return false;
+    }
 
     SetBlocking(false);
 
-    if(plNet::Connect(fSocket, &addr.GetAddressInfo()) != 0)
+    int ret = plNet::Connect(fSocket, &addr.GetAddressInfo());
+    if (ret != 0 && plNet::GetError() != kInProgressError)
+    {
         return ErrorClose();
-    
+    }
+
     return true;
 }
 
@@ -145,12 +161,24 @@ int plTcpSocket::RecvData(char * data, int len)
 {
     plFdSet fdset;
     fdset.SetForSocket(*this);
-    fdset.WaitForRead(false,fRecvTimeOut);
-    if (fdset.IsErrFor(*this))
+
+    if (fdset.WaitForRead(false, fRecvTimeOut) < 0)
+    {
         return -1;
+    }
+
+    if (fdset.IsErrFor(*this))
+    {
+        return -1;
+    }
+
     if (fdset.IsSetFor(*this))
-        return plNet::Read(fSocket,data,len);   // returns -1 on error
+    {
+        return plNet::Read(fSocket, data, len);   // returns -1 on error
+    }
     else
+    {
         return -2;
+    }
 };
 
