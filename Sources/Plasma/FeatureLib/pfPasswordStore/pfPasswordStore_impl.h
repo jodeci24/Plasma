@@ -78,6 +78,18 @@ public:
 
 // TODO: A Linux libsecret-based storage mechanism
 
-// TODO: An OSX KeyChain-based storage mechanism
+#ifdef HS_BUILD_FOR_OSX
+/**
+ * An OSX Keychain password storage mechanism.
+ */
+class pfMacPasswordStore : public pfPasswordStore
+{
+public:
+    pfMacPasswordStore() { }
+
+    virtual const plString GetPassword(const plString& username);
+    virtual bool SetPassword(const plString& username, const plString& password);
+};
+#endif //HS_BUILD_FOR_OSX
 
 #endif //pfPasswordStore_impl_inc
