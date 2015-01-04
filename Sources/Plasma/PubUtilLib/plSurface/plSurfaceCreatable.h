@@ -57,28 +57,28 @@ REGISTER_NONCREATABLE( plLayerInterface );
 
 REGISTER_CREATABLE( plLayer );
 
+
+#include "plLayerAnimation.h"
+
+REGISTER_NONCREATABLE( plLayerAnimationBase );
+REGISTER_CREATABLE( plLayerAnimation );
 #ifndef MINIMAL_GL_BUILD
-
-    #include "plLayerAnimation.h"
-
-    REGISTER_CREATABLE( plLayerAnimation );
-    REGISTER_CREATABLE( plLayerLinkAnimation );
-    REGISTER_NONCREATABLE( plLayerAnimationBase );
-    REGISTER_CREATABLE( plLayerSDLAnimation );
-
-    #include "plLayerDepth.h"
-
-    REGISTER_CREATABLE( plLayerDepth );
-
-    #include "plLayerOr.h"
-
-    REGISTER_CREATABLE( plLayerOr );
-
-    #include "plLayerShadowBase.h"
-
-    REGISTER_CREATABLE( plLayerShadowBase );
-    REGISTER_CREATABLE( plLayerLightBase );
+REGISTER_CREATABLE( plLayerLinkAnimation );
+REGISTER_CREATABLE( plLayerSDLAnimation );
 #endif
+
+#include "plLayerDepth.h"
+
+REGISTER_CREATABLE( plLayerDepth );
+
+#include "plLayerOr.h"
+
+REGISTER_CREATABLE( plLayerOr );
+
+#include "plLayerShadowBase.h"
+
+REGISTER_CREATABLE( plLayerShadowBase );
+REGISTER_CREATABLE( plLayerLightBase );
 
 #include "plShader.h"
 
