@@ -57,11 +57,11 @@ REGISTER_CREATABLE( hsGMipmapClass );
 
 REGISTER_NONCREATABLE( plBitmap );
 
-#ifndef MINIMAL_GL_BUILD
 #include "plMipmap.h"
 
 REGISTER_CREATABLE( plMipmap );
 
+#ifndef MINIMAL_GL_BUILD
 #include "plCubicEnvironmap.h"
 
 REGISTER_CREATABLE( plCubicEnvironmap );
