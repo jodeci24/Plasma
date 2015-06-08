@@ -237,10 +237,12 @@ REGISTER_CREATABLE( plMultistageModMsg );
 
 #include "plExcludeRegionMsg.h"
 REGISTER_CREATABLE(plExcludeRegionMsg);
+#endif // MINIMAL_GL_BUILD
 
 #include "plDynamicTextMsg.h"
 REGISTER_CREATABLE(plDynamicTextMsg);
 
+#ifndef MINIMAL_GL_BUILD
 #include "plInputIfaceMgrMsg.h"
 REGISTER_CREATABLE(plInputIfaceMgrMsg);
 

@@ -61,7 +61,6 @@ REGISTER_NONCREATABLE( plBitmap );
 
 REGISTER_CREATABLE( plMipmap );
 
-#ifndef MINIMAL_GL_BUILD
 #include "plCubicEnvironmap.h"
 
 REGISTER_CREATABLE( plCubicEnvironmap );
@@ -85,6 +84,5 @@ REGISTER_CREATABLE( plFontCache );
 #include "plLODMipmap.h"
 
 REGISTER_CREATABLE( plLODMipmap );
-#endif
 
 #endif // plGImageCreatable_inc
