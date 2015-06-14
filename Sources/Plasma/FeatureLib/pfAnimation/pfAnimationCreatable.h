@@ -46,8 +46,10 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "pnFactory/plCreator.h"
 
 #include "plViewFaceModifier.h"
+REGISTER_CREATABLE(plViewFaceModifier);
 
-REGISTER_CREATABLE( plViewFaceModifier );
+
+#ifndef MINIMAL_GL_BUILD
 
 #include "plLineFollowMod.h"
 
@@ -84,5 +86,7 @@ REGISTER_CREATABLE( plStereizer );
 #include "pfObjectFlocker.h"
 
 REGISTER_CREATABLE( pfObjectFlocker );
+
+#endif
 
 #endif // pfAnimationCreatable_inc
