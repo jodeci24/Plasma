@@ -105,6 +105,9 @@ public:
     void SetNumBitVectors(uint32_t n) { Reset(); fNumBitVectors=n; fBitVectors = new uint32_t[n]; }
     void SetBitVector(int i, uint32_t val) { fBitVectors[i]=val; }
 
+    // Returns the highest bit that is set
+    int GetMaximum() const;
+
     // Do dst.SetCount(0), then add each set bit's index into dst, returning dst.
     hsTArray<int16_t>& Enumerate(hsTArray<int16_t>& dst) const;
     // this->Clear(), then set all bits listed in src, returning *this.

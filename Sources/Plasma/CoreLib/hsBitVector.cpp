@@ -110,6 +110,14 @@ hsBitVector& hsBitVector::Compact()
     return *this;
 }
 
+int hsBitVector::GetMaximum() const
+{
+    hsBitIterator iter(*this);
+    iter.Begin();
+    while(iter.Advance() >= 0) { }
+    return iter.Current();
+}
+
 
 void hsBitVector::Read(hsStream* s)
 {
