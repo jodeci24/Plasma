@@ -80,11 +80,13 @@ REGISTER_CREATABLE( plActivatorMsg );
 #include "plCondRefMsg.h"
 
 REGISTER_CREATABLE( plCondRefMsg );
+#endif
 
 #include "plAnimCmdMsg.h"
+REGISTER_CREATABLE(plAnimCmdMsg);
+REGISTER_CREATABLE(plAGCmdMsg);
 
-REGISTER_CREATABLE( plAnimCmdMsg );
-REGISTER_CREATABLE( plAGCmdMsg );
+#ifndef MINIMAL_GL_BUILD
 REGISTER_CREATABLE( plAGInstanceCallbackMsg );
 REGISTER_CREATABLE( plAGDetachCallbackMsg );
 
