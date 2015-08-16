@@ -51,6 +51,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plKey.h"
 #include "plUoid.h"
 #include "hsResMgr.h"
+#include "pnFactory/plFactory.h"
 
 #define TRACK_REFS 0 // MEMLEAKFISH
 
@@ -278,6 +279,20 @@ void plKey::IDecRef()
 plKeyData::plKeyData()
 {
     fRefCount = 0;
+
+#ifdef HS_DEBUGGING
+    fClassType = nullptr;
+#endif
+}
+
+plKeyData::plKeyData(const plUoid& uoid)
+{
+    fRefCount = 0;
+
+#ifdef HS_DEBUGGING
+    fIDName = uoid.GetObjectName();
+    fClassType = plFactory::GetNameOfClass(uoid.GetClassType());
+#endif
 }
 
 plKeyData::~plKeyData()

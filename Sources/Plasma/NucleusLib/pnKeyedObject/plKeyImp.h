@@ -51,25 +51,63 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 //------------------------------------
 // plKey is a handle to a keyedObject
 //------------------------------------
-class plKeyImp : public plKeyData 
+class plKeyImp : public plKeyData
 {
 private:
     static hsKeyedObject* SafeGetObject(const plKeyImp* key);
 
 public:
     plKeyImp();
-    plKeyImp(plUoid, uint32_t pos,uint32_t len);
+    plKeyImp(plUoid, uint32_t pos, uint32_t len);
     virtual ~plKeyImp();
 
-    virtual const plUoid&   GetUoid() const { return fUoid; }
-    virtual const plString& GetName() const;
 
-    virtual hsKeyedObject*  GetObjectPtr();
-    virtual hsKeyedObject*  ObjectIsLoaded() const;
-    virtual hsKeyedObject*  VerifyLoaded();
+    /**
+     * Advances the stream position by the size of a key without really reading
+     * the key data.
+     */
+    static void SkipRead(hsStream* s);
 
-    // called before writing to disk so that static keys can have faster lookups (int compare instead of string compare)
-    void SetObjectID(uint32_t id) {fUoid.SetObjectID(id);}
+
+    const plUoid&   GetUoid() const override { return fUoid; }
+    const plString& GetName() const override;
+
+    /**
+     * Returns a direct pointer to the object.
+     *
+     * You probably want to use ObjectIsLoaded unless you're 100% sure the
+     * object is loaded.
+     */
+    hsKeyedObject* GetObjectPtr() override;
+
+    /**
+     * Returns the object if it is loaded, null otherwise.
+     */
+    hsKeyedObject* ObjectIsLoaded() const override;
+
+    /**
+     * Forces the object to be read and loaded by the res manager, and returns
+     * the loaded object.
+     */
+    hsKeyedObject* VerifyLoaded() override;
+
+
+    /**
+     * Sets the integer object ID of this object.
+     *
+     * This is called before writing to disk so that static keys can have
+     * faster lookups in the res manager (integer comparison rather than
+     * name-based string comparison).
+     */
+    void SetObjectID(uint32_t id) { fUoid.SetObjectID(id); }
+
+    /**
+     * Sets the object pointer directly.
+     *
+     * This should only be used by hsKeyedObject!
+     */
+    hsKeyedObject* SetObjectPtr(hsKeyedObject* p);
+
 
     //----------------------
     // I/O
@@ -78,33 +116,44 @@ public:
     void Read(hsStream* s);
     void Write(hsStream* s);
     void WriteObject(hsStream* s);
-    // For when you need to skip over a key in a stream
-    static void SkipRead(hsStream* s);
 
-    uint32_t GetStartPos() const  { return fStartPos; } // for ResMgr to read the Objects
-    uint32_t GetDataLen() const   { return fDataLen;  } // for ResMgr to read the Objects
+    /**
+     * Returns the start position of this object in the data file, for the
+     * res manager to read the object.
+     */
+    uint32_t GetStartPos() const { return fStartPos; }
+
+    /**
+     * Returns the length of this object's data in the data file, for the res
+     * manager to read the object.
+     */
+    uint32_t GetDataLen() const { return fDataLen;  }
 
     //----------------------
     // Allow a keyed object to behave as if it has an active ref when in fact the object
     // should only be active ref'ed by a non-keyed parent.  Essentially just bumps/decs
     // the active ref count to facilitate normal object creation/destruction
     //----------------------
-    virtual hsKeyedObject*  RefObject(plRefFlags::Type flags = plRefFlags::kActiveRef);
-    virtual void            UnRefObject(plRefFlags::Type flags = plRefFlags::kActiveRef);
+    hsKeyedObject* RefObject(plRefFlags::Type flags = plRefFlags::kActiveRef) override;
+    void UnRefObject(plRefFlags::Type flags = plRefFlags::kActiveRef) override;
 
-    //----------------------
-    // Release has two behaviors, depending on whether the ref is active or passive:
-    // Active - Release decs the ActiveRefCnt. When it gets to zero, the object will be deleted.
-    // Passive - Unregisters my interest in when the object is created or destroyed.
-    //----------------------
-    virtual void Release(plKey targetKey);
+    /**
+     * Release this object's reference on the target key.
+     *
+     * Release has two behaviours, depending on whether the ref is active or
+     * passive:
+     *
+     * - Active: Decrements the target object's active ref count. If it gets to
+     *           zero, the target object will be deleted.
+     *
+     * - Passive: Unregisters this object's interest in when the target object
+     *            is created or destroyed.
+     */
+    void Release(plKey targetKey) override;
 
     void UnRegister();
     void SetUoid(const plUoid& uoid);
     void SetupNotify(plRefMsg* msg, plRefFlags::Type flags);
-
-    // hsKeyedObject use only!
-    hsKeyedObject* SetObjectPtr(hsKeyedObject* p);
 
     ////////////////////////////////////////////////////////////////////////////
     // ResManager/Registry use only!
@@ -133,7 +182,7 @@ public:
     virtual uint16_t      GetActiveRefs() const           { return fNumActiveRefs; }
     virtual uint16_t      GetNumNotifyCreated() const     { return fNotifyCreated.GetCount(); }
     virtual plRefMsg*   GetNotifyCreated(int i) const   { return fNotifyCreated[i]; }
-    virtual const hsBitVector& GetActiveBits() const    { return fActiveRefs; }
+    const hsBitVector& GetActiveBits() const override { return fActiveRefs; }
 
 protected:
     void        AddNotifyCreated(plRefMsg* msg, plRefFlags::Type flags);
@@ -159,18 +208,56 @@ protected:
 
     void IRelease(plKeyImp* keyImp);
 
+
+    /**
+     * The actual object pointer for this object.
+     */
     hsKeyedObject* fObjectPtr;
 
-    // These fields are the ones actually saved to disk
-    plUoid fUoid;
-    uint32_t fStartPos;   // where I live in the Datafile  
-    uint32_t fDataLen;    // Length in the Datafile
 
-    // Following used by hsResMgr to notify on defered load or when a passive ref is destroyed.
-    uint16_t                      fNumActiveRefs; // num active refs on me
-    hsBitVector                 fActiveRefs;    // Which of notify created are active refs
-    hsBitVector                 fNotified;      // which of notifycreated i've already notified.
-    hsTArray<plRefMsg*>         fNotifyCreated; // people to notify when I'm created or destroyed
+    // These fields are the ones actually saved to disk:
+
+    /**
+     * The unique object identifier for this object.
+     */
+    plUoid fUoid;
+
+    /**
+     * The start position of this object in the data file.
+     */
+    uint32_t fStartPos;
+
+    /**
+     * The length of the object data in the data file.
+     */
+    uint32_t fDataLen;
+
+
+    // Following used by hsResMgr to notify on defered load or when a passive ref is destroyed:
+
+    /**
+     * The number of active references to this object from plKeys.
+     */
+    uint16_t fNumActiveRefs;
+
+    /**
+     * A list of messages to send for notifying other objects when this object
+     * has been created or destroyed.
+     */
+    hsTArray<plRefMsg*> fNotifyCreated;
+
+    /**
+     * Boolean vector indicating which of the fNotifyCreated messages are
+     * active refs (and thus need to be notified on destruction).
+     */
+    hsBitVector fActiveRefs;
+
+    /**
+     * Boolean vector indicating which of the fNotifyCreated messages have
+     * already been notified.
+     */
+    hsBitVector fNotified;
+
     mutable hsTArray<plKeyImp*> fRefs;          // refs I've made (to be released when I'm unregistered).
     mutable int16_t               fPendingRefs;   // Outstanding requests I have out.
     mutable hsTArray<plKeyImp*> fClones;        // clones of me

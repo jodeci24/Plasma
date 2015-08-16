@@ -127,6 +127,11 @@ public:
 protected:
     // Protected so only the registry can create it
     plKeyData();
+
+    // For plKeyImp
+    plKeyData(std::nullptr_t);
+    plKeyData(const plUoid& uoid);
+
     virtual ~plKeyData();
 
 #ifdef HS_DEBUGGING

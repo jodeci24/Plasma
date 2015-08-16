@@ -851,23 +851,23 @@ bool  plSceneObject::IsFinal()
 }
 
 // Export only. Interfaces perm on object.
-void plSceneObject::SetDrawInterface(plDrawInterface* di) 
-{ 
+void plSceneObject::SetDrawInterface(plDrawInterface* di)
+{
     ISetDrawInterface(di);
 }
 
-void plSceneObject::SetSimulationInterface(plSimulationInterface* si) 
-{ 
+void plSceneObject::SetSimulationInterface(plSimulationInterface* si)
+{
     ISetSimulationInterface(si);
 }
 
-void plSceneObject::SetAudioInterface(plAudioInterface* ai) 
-{ 
+void plSceneObject::SetAudioInterface(plAudioInterface* ai)
+{
     ISetAudioInterface(ai);
 }
 
-void plSceneObject::SetCoordinateInterface(plCoordinateInterface* ci) 
-{ 
+void plSceneObject::SetCoordinateInterface(plCoordinateInterface* ci)
+{
     ISetCoordinateInterface(ci);
 }
 
