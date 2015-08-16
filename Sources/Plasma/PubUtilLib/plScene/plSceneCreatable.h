@@ -54,9 +54,11 @@ REGISTER_CREATABLE( plSceneNode );
 REGISTER_CREATABLE( plOccluder );
 REGISTER_CREATABLE( plMobileOccluder );
 
+#ifndef MINIMAL_GL_BUILD
 #include "plPostEffectMod.h"
 
 REGISTER_CREATABLE( plPostEffectMod );
+#endif
 
 #include "plVisMgr.h"
 

@@ -57,6 +57,7 @@ REGISTER_CREATABLE( hsGMipmapClass );
 
 REGISTER_NONCREATABLE( plBitmap );
 
+#ifndef MINIMAL_GL_BUILD
 #include "plMipmap.h"
 
 REGISTER_CREATABLE( plMipmap );
@@ -84,5 +85,6 @@ REGISTER_CREATABLE( plFontCache );
 #include "plLODMipmap.h"
 
 REGISTER_CREATABLE( plLODMipmap );
+#endif
 
 #endif // plGImageCreatable_inc

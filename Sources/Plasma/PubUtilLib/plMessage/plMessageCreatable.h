@@ -45,10 +45,12 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "pnFactory/plCreator.h"
 
+#ifndef MINIMAL_GL_BUILD
 #include "plInterestingPing.h"
 
 REGISTER_CREATABLE( plInterestingModMsg );
 REGISTER_CREATABLE( plInterestingPing );
+#endif
 
 #include "plLayRefMsg.h"
 
@@ -62,6 +64,7 @@ REGISTER_CREATABLE( plMatRefMsg );
 
 REGISTER_CREATABLE( plMeshRefMsg );
 
+#ifndef MINIMAL_GL_BUILD
 #include "plLOSRequestMsg.h"
 
 REGISTER_CREATABLE( plLOSRequestMsg );
@@ -111,6 +114,7 @@ REGISTER_CREATABLE( plPickedMsg );
 #include "plCollideMsg.h"
 
 REGISTER_CREATABLE( plCollideMsg );
+#endif
 
 #include "plMatrixUpdateMsg.h"
 
@@ -125,6 +129,7 @@ REGISTER_CREATABLE( plPreResourceMsg );
 
 REGISTER_CREATABLE( plTimerCallbackMsg );
 
+#ifndef MINIMAL_GL_BUILD
 #include "plSpawnModMsg.h"
 
 REGISTER_CREATABLE( plSpawnModMsg );
@@ -132,6 +137,7 @@ REGISTER_CREATABLE( plSpawnModMsg );
 #include "plSpawnRequestMsg.h"
 
 REGISTER_CREATABLE( plSpawnRequestMsg );
+#endif
 
 #include "plNodeCleanupMsg.h"
 
@@ -145,6 +151,7 @@ REGISTER_CREATABLE( plDeviceRecreateMsg );
 
 REGISTER_CREATABLE( plLightRefMsg );
 
+#ifndef MINIMAL_GL_BUILD
 #include "plSimStateMsg.h"
 
 // REGISTER_CREATABLE( plSimStateMsg );
@@ -176,11 +183,13 @@ REGISTER_CREATABLE(plLinkEffectPrepBCMsg);
 REGISTER_CREATABLE(plPseudoLinkEffectMsg);
 REGISTER_CREATABLE(plPseudoLinkAnimTriggerMsg);
 REGISTER_CREATABLE(plPseudoLinkAnimCallbackMsg);
+#endif
 
 #include "plListenerMsg.h"
 REGISTER_CREATABLE(plListenerMsg);
 REGISTER_CREATABLE(plSetListenerMsg);
 
+#ifndef MINIMAL_GL_BUILD
 #include "plTransitionMsg.h"
 REGISTER_CREATABLE(plTransitionMsg);
 
@@ -364,6 +373,7 @@ REGISTER_CREATABLE(plAvCoopMsg);
 #endif // ndef SERVER
 #endif // ndef NO_AV_MSGS
 
+#endif
 
 #endif // plMessageCreatable_inc
 

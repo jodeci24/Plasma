@@ -57,32 +57,38 @@ REGISTER_NONCREATABLE( plLayerInterface );
 
 REGISTER_CREATABLE( plLayer );
 
-#include "plLayerAnimation.h"
+#ifndef MINIMAL_GL_BUILD
 
-REGISTER_CREATABLE( plLayerAnimation );
-REGISTER_CREATABLE( plLayerLinkAnimation );
-REGISTER_NONCREATABLE( plLayerAnimationBase );
-REGISTER_CREATABLE( plLayerSDLAnimation );
+    #include "plLayerAnimation.h"
 
-#include "plLayerDepth.h"
+    REGISTER_CREATABLE( plLayerAnimation );
+    REGISTER_CREATABLE( plLayerLinkAnimation );
+    REGISTER_NONCREATABLE( plLayerAnimationBase );
+    REGISTER_CREATABLE( plLayerSDLAnimation );
 
-REGISTER_CREATABLE( plLayerDepth );
+    #include "plLayerDepth.h"
 
-#include "plLayerOr.h"
+    REGISTER_CREATABLE( plLayerDepth );
 
-REGISTER_CREATABLE( plLayerOr );
+    #include "plLayerOr.h"
 
-#include "plLayerShadowBase.h"
+    REGISTER_CREATABLE( plLayerOr );
 
-REGISTER_CREATABLE( plLayerShadowBase );
-REGISTER_CREATABLE( plLayerLightBase );
+    #include "plLayerShadowBase.h"
+
+    REGISTER_CREATABLE( plLayerShadowBase );
+    REGISTER_CREATABLE( plLayerLightBase );
+#endif
 
 #include "plShader.h"
 
 REGISTER_CREATABLE( plShader );
 
-#include "plGrassShaderMod.h"
+#ifndef MINIMAL_GL_BUILD
 
-REGISTER_CREATABLE( plGrassShaderMod );
+    #include "plGrassShaderMod.h"
+
+    REGISTER_CREATABLE( plGrassShaderMod );
+#endif
 
 #endif // plSurfaceCreatable_inc

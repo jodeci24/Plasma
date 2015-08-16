@@ -53,6 +53,8 @@ REGISTER_CREATABLE( plDrawableSpans );
 
 REGISTER_CREATABLE( plSpaceTree );
 
+#ifndef MINIMAL_GL_BUILD
+
 #include "plSharedMesh.h"
 
 REGISTER_CREATABLE( plSharedMesh );
@@ -130,6 +132,9 @@ REGISTER_CREATABLE( plMorphDelta );
 #include "plDynaRippleVSMgr.h"
 
 REGISTER_CREATABLE( plDynaRippleVSMgr );
+
+#endif
+
 
 #include "plClusterGroup.h"
 
