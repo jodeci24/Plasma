@@ -39,66 +39,26 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
       Mead, WA   99021
 
 *==LICENSE==*/
-#ifndef plOSMsg_inc
-#define plOSMsg_inc
+#ifndef plMouseState_inc
+#define plMouseState_inc
 
-
-
-//
-// This enum wraps all of the OS messages
-// that we care about for this particular
-// platform - add as necessary...
-//
-
-// for Win32:
-#ifdef HS_BUILD_FOR_WIN32
-
-#include "hsWindows.h" // FIXME: This gives me a sad
-
-enum plOSMsg
-{
-    KEYDOWN         = WM_KEYDOWN,
-    KEYUP           = WM_KEYUP,
-    MOUSEMOVE       = WM_MOUSEMOVE,
-    L_BUTTONDN      = WM_LBUTTONDOWN,
-    L_BUTTONUP      = WM_LBUTTONUP,
-    R_BUTTONDN      = WM_RBUTTONDOWN,
-    R_BUTTONUP      = WM_RBUTTONUP,
-    MOUSEWHEEL      = 0x020A,
-    L_BUTTONDBLCLK  = WM_LBUTTONDBLCLK,
-    R_BUTTONDBLCLK  = WM_RBUTTONDBLCLK,
-    SYSKEYDOWN      = WM_SYSKEYDOWN,
-    SYSKEYUP        = WM_SYSKEYUP,
-    M_BUTTONDN      = WM_MBUTTONDOWN,
-    M_BUTTONUP      = WM_MBUTTONUP,
-    CHAR_MSG        = WM_CHAR,
-};
-
-#else
-
-enum plOSMsg { };
-
-#endif
-
-
-//
-// generic structure that we can use to describe
-// the state of the mouse on any platform.
-//
-//
-
+/**
+ * A generic structure that we can use to describe the state of the mouse on
+ * any platform.
+ */
 struct plMouseState
 {
     enum
     {
         kLeftButton     =   0x0001,
         kRightButton    =   0x0002,
-        kMiddleButton   =   0x0004, 
+        kMiddleButton   =   0x0004,
     };
-    float   fX;
-    float   fY;
-    uint32_t  fButtonState;
+
+    float       fX;
+    float       fY;
+    uint32_t    fButtonState;
 };
 
 
-#endif // plOSMsg 
+#endif // plMouseState

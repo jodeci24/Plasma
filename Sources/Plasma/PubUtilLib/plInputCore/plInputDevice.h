@@ -47,7 +47,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "HeadSpin.h"
 
 //#include "pnInputCore/plControlDefinition.h"
-#include "pnInputCore/plOSMsg.h"
 #include "pnInputCore/plKeyDef.h"
 #include "hsBitVector.h"
 #include "hsTemplates.h"
@@ -55,6 +54,41 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 class plMessage;
 struct plMouseInfo;
 class plPipeline;
+
+
+#ifdef HS_BUILD_FOR_WIN32
+
+#include "hsWindows.h" // FIXME: This gives me a sad
+
+//
+// This enum wraps all of the OS messages
+// that we care about for this particular
+// platform - add as necessary...
+//
+enum plOSMsg
+{
+    KEYDOWN         = WM_KEYDOWN,
+    KEYUP           = WM_KEYUP,
+    MOUSEMOVE       = WM_MOUSEMOVE,
+    L_BUTTONDN      = WM_LBUTTONDOWN,
+    L_BUTTONUP      = WM_LBUTTONUP,
+    R_BUTTONDN      = WM_RBUTTONDOWN,
+    R_BUTTONUP      = WM_RBUTTONUP,
+    MOUSEWHEEL      = 0x020A,
+    L_BUTTONDBLCLK  = WM_LBUTTONDBLCLK,
+    R_BUTTONDBLCLK  = WM_RBUTTONDBLCLK,
+    SYSKEYDOWN      = WM_SYSKEYDOWN,
+    SYSKEYUP        = WM_SYSKEYUP,
+    M_BUTTONDN      = WM_MBUTTONDOWN,
+    M_BUTTONUP      = WM_MBUTTONUP,
+    CHAR_MSG        = WM_CHAR,
+};
+
+#else
+
+enum plOSMsg { };
+
+#endif
 
 class plInputDevice 
 {

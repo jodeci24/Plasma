@@ -8,7 +8,7 @@ set(pnInputCore_HEADERS
     plInputMap.h
     plKeyDef.h
     plKeyMap.h
-    plOSMsg.h
+    plMouseState.h
 )
 
 set(pnInputCore_SOURCES
